@@ -8,29 +8,52 @@ pico_sdk_init()
 
 # Define the target executable
 add_executable(non_secure_app
-    main_ns.c # Placeholder
+    src/main.c
+    src/usb_descriptors.c
+    src/usb/ccid_device.c
+    src/secure_gateway.c
+    # src/usb/...? 
+)
+
+# Include directories
+target_include_directories(non_secure_app PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/src
+    ${CMAKE_CURRENT_LIST_DIR}/../include
+    ${PICO_TINYUSB_PATH}/src
 )
 
 # Linker script configuration
-# Explicitly use the Non-Secure memory map
 pico_set_linker_script(non_secure_app ${CMAKE_CURRENT_LIST_DIR}/memmap_ns.ld)
 
+# Link libraries
 # Link libraries
 target_link_libraries(non_secure_app
     pico_stdlib
     pico_multicore
-    # Add other libraries
+    hardware_flash
+    tinyusb_device
+    tinyusb_board
 )
 
-# IMPORTANT: Link against the Secure World Import Library
-# This allows the NS world to call functions exported by the SW.
-# The `SECURE_IMPORT_LIB` variable should be passed from the parent CMake or defined via command line.
+# Link against the Secure World Import Library
 if (DEFINED SECURE_IMPORT_LIB)
-    target_link_libraries(non_secure_app ${SECURE_IMPORT_LIB})
+    # Ninja/CMake restriction: Can't easily define a rule for a file in another directory 
+    # from here using add_custom_command. So we copy it to our binary dir.
+    add_dependencies(non_secure_app secure_app)
+    # Use link_options to avoid Ninja complaining about missing rule for the file
+    target_link_options(non_secure_app PRIVATE ${SECURE_IMPORT_LIB})
 else()
-    message(WARNING "SECURE_IMPORT_LIB not defined. Non-Secure app properly won't be able to call Secure functions.")
+    message(WARNING "SECURE_IMPORT_LIB not defined. Non-Secure app won't be able to call Secure functions.")
 endif()
 
 # Enable STDIO
 pico_enable_stdio_uart(non_secure_app 1)
-pico_enable_stdio_usb(non_secure_app 1)
+pico_enable_stdio_usb(non_secure_app 1) # NS world handles USB
+
+# TinyUSB config
+# target_include_directories is already set for src/
+# target_compile_definitions(non_secure_app PRIVATE TUSB_CONFIG_FILE=tusb_config.h)
+
+# Add UF2 output for the NS world (which works as the main image effectively if combined, or we load both)
+# Actually, for TrustZone, we often produce a combined UF2 or load them separately.
+pico_add_extra_outputs(non_secure_app)

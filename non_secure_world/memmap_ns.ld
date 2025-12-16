@@ -42,6 +42,32 @@ SECTIONS
         . = ALIGN(4);
         *(.text*)
         *(.rodata*)
+        . = ALIGN(4);
+        __etext = .; /* Define __etext for crt0 */
+    } > FLASH
+
+    /* .init_array / .fini_array */
+    .preinit_array : {
+        . = ALIGN(4);
+        __preinit_array_start = .;
+        KEEP (*(.preinit_array))
+        __preinit_array_end = .;
+    } > FLASH
+
+    .init_array : {
+        . = ALIGN(4);
+        __init_array_start = .;
+        KEEP (*(SORT(.init_array.*)))
+        KEEP (*(.init_array))
+        __init_array_end = .;
+    } > FLASH
+
+    .fini_array : {
+        . = ALIGN(4);
+        __fini_array_start = .;
+        KEEP (*(SORT(.fini_array.*)))
+        KEEP (*(.fini_array))
+        __fini_array_end = .;
     } > FLASH
 
     /* Initialized data */
@@ -50,6 +76,7 @@ SECTIONS
         . = ALIGN(4);
         __data_start__ = .;
         *(.data*)
+        . = ALIGN(4);
         __data_end__ = .;
     } > RAM AT > FLASH
 
@@ -60,6 +87,26 @@ SECTIONS
         __bss_start__ = .;
         *(.bss*)
         *(COMMON)
+        . = ALIGN(4);
         __bss_end__ = .;
     } > RAM
+
+    .scratch_x : {
+        __scratch_x_start__ = .;
+        __scratch_x_source__ = .;
+        __scratch_x_end__ = .;
+    } > RAM
+
+    .scratch_y : {
+        __scratch_y_start__ = .;
+        __scratch_y_source__ = .;
+        __scratch_y_end__ = .;
+    } > RAM
+    
+    __StackLimit = ORIGIN(RAM) + LENGTH(RAM) - 0x1000;
+    
+    __end__ = .;
+    end = __end__;
 }
+
+ASSERT(__StackTop >= __StackLimit, "Region RAM overflowed with stack")

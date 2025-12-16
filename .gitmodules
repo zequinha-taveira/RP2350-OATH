@@ -1,0 +1,6 @@
+[submodule "lib/libcotp"]
+	path = lib/libcotp
+	url = https://github.com/paolostivanin/libcotp.git
+[submodule "lib/tinyusb"]
+	path = lib/tinyusb
+	url = https://github.com/hathach/tinyusb.git
