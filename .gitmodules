@@ -19,3 +19,6 @@
 [submodule "tools/yubico-c"]
 	path = tools/yubico-c
 	url = https://github.com/Yubico/yubico-c.git
+[submodule "tools/python-cvc"]
+	path = tools/python-cvc
+	url = https://github.com/polhenarejos/pycvc.git
