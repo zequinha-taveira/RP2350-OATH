@@ -7,3 +7,15 @@
 [submodule "tools/yubikey-manager"]
 	path = tools/yubikey-manager
 	url = https://github.com/Yubico/yubikey-manager.git
+[submodule "tools/yubikey-personalization"]
+	path = tools/yubikey-personalization
+	url = https://github.com/Yubico/yubikey-personalization.git
+[submodule "tools/yubico-piv-tool"]
+	path = tools/yubico-piv-tool
+	url = https://github.com/Yubico/yubico-piv-tool.git
+[submodule "tools/yubioath-flutter"]
+	path = tools/yubioath-flutter
+	url = https://github.com/Yubico/yubioath-flutter.git
+[submodule "tools/yubico-c"]
+	path = tools/yubico-c
+	url = https://github.com/Yubico/yubico-c.git
