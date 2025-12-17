@@ -20,6 +20,7 @@ This fork of the RP2350-OATH project is dedicated to achieving **100% software p
 - **Yubico PIV Tool** - included in `tools/yubico-piv-tool`
 - **Yubico Personalization Tool** - included in `tools/yubikey-personalization`
 - **Yubico-C SDK** - included in `tools/yubico-c`
+- **CVC Tools for Python** - included in `tools/python-cvc`
 - **System-level Smart Card drivers**
 
 ### Key Improvements in this Fork:
