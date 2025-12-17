@@ -4,3 +4,6 @@
 [submodule "lib/tinyusb"]
 	path = lib/tinyusb
 	url = https://github.com/hathach/tinyusb.git
+[submodule "tools/yubikey-manager"]
+	path = tools/yubikey-manager
+	url = https://github.com/Yubico/yubikey-manager.git
