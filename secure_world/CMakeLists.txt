@@ -36,8 +36,6 @@ target_include_directories(secure_app PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../lib
     ${CMAKE_CURRENT_LIST_DIR}/../lib/libcotp/src
     ${CMAKE_CURRENT_LIST_DIR}/../lib/libcotp/src/utils
-    # Fallback mbedtls include if pico_mbedtls doesn't export them correctly
-    C:/pico-sdk/lib/mbedtls/include
 )
 
 # PIO configuration
@@ -60,7 +58,6 @@ target_link_libraries(secure_app
     pico_stdlib
     pico_multicore
     pico_rand
-    pico_mbedtls
     hardware_flash
     hardware_sha256
     hardware_pio
