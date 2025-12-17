@@ -53,8 +53,13 @@ static void save_to_flash(void) {
     ((uint32_t *)flash_data_buffer.iv)[i] = get_rand_32();
   }
 
-  // 2. Encrypt ram_cache into flash_data_buffer.encrypted_data
-  // The size of ram_cache is padded up to PADDED_DATA_SIZE
+  // 2. Apply zero-padding to ram_cache up to PADDED_DATA_SIZE
+  size_t struct_size = sizeof(oath_persist_t);
+  if (PADDED_DATA_SIZE > struct_size) {
+    memset(((uint8_t *)&ram_cache) + struct_size, 0, PADDED_DATA_SIZE - struct_size);
+  }
+
+  // 3. Encrypt ram_cache into flash_data_buffer.encrypted_data
   bool success = aes_encrypt(
       master_key,
       flash_data_buffer.iv,

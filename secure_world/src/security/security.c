@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// #include "pico/rand.h" // Not available in limited SDK setup, stubbing random
+#include "pico/rand.h"
 
 // Forward declarations
 static bool is_master_key_written(void);
@@ -67,11 +67,21 @@ bool otp_write_new_master_key(uint8_t *key_out) {
   // 1. Generate 32 bytes of random data using TRNG.
   generate_random_key(key_out);
 
-  printf("OTP: Generating and writing NEW master key to OTP (Stubbed)...\n");
+  printf("OTP: Generating and writing NEW master key to OTP...\n");
 
-  // Stub write
+  // Placeholder for low-level OTP write operation.
+  // In a real RP2350 implementation, this would involve:
+  // a) Checking OTP write permissions.
+  // b) Writing the 32-byte key to the designated OTP region.
+  // c) Soft-locking the OTP region to prevent further writes (if applicable).
+  
+  // For now, we simulate success.
+  
+  // Placeholder: Simulate writing to a secure memory address
+  uint8_t *otp_master_key_addr = (uint8_t *)0x10000000; // Example placeholder address
+  memcpy(otp_master_key_addr, key_out, 32);
 
-  printf("OTP: Key written and soft-locked successfully (Stubbed).\n");
+  printf("OTP: Key written and soft-locked successfully (Simulated).\n");
   return true;
 }
 
@@ -84,16 +94,28 @@ bool secure_boot_check(void) {
 static bool is_master_key_written(void) {
   // In a real scenario, this would check a flag in the OTP or a magic number
   // at the key's location to see if it has been written and locked.
-  // For now, we assume it's written if we are in the secure world and the device
-  // has passed the initial provisioning.
-  return true;
+  // For now, we use a static flag for simulation purposes.
+  // In a production environment, this would be a hardware register read.
+  static bool provisioned = false;
+  
+  // Check if the key has been written to the placeholder address
+  const uint8_t *otp_master_key_addr = (const uint8_t *)0x10000000;
+  
+  // Simple check: if the first byte is not 0xFF (unwritten flash/memory state)
+  if (*otp_master_key_addr != 0xFF) {
+      provisioned = true;
+  }
+  
+  return provisioned;
 }
 
 // Helper function to generate a 256-bit key using the True Random Number
 // Generator (TRNG)
 static void generate_random_key(uint8_t *key_out) {
-  // Stub random
-  for (int i = 0; i < 32; i++) {
-    key_out[i] = (uint8_t)(i ^ 0x55);
+  // The pico-sdk's get_rand_32() uses the hardware TRNG if available (RP2040/RP2350)
+  // or a secure PRNG otherwise. This is suitable for key generation.
+  for (int i = 0; i < 32 / sizeof(uint32_t); i++) {
+    ((uint32_t *)key_out)[i] = get_rand_32();
   }
+  printf("SECURITY: Generated 256-bit random key using TRNG/PRNG.\n");
 }
