@@ -19,6 +19,7 @@ add_executable(secure_app
     src/oath/oath_protocol.c
     src/oath/oath_storage.c
     src/security/security.c
+    src/security/hsm.c
     src/time_sync.c
     src/hid_keyboard.c
     src/crypto/aes_gcm.c

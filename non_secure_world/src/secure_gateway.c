@@ -1,40 +1,75 @@
+#include "secure_gateway.h"
+#include "secure_functions.h"
+#include "secure_gateway.h"
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "secure_gateway.h"
+
+
+// Secure World Handler from secure_functions.h
+extern int32_t secure_world_handler(secure_gateway_func_id_t func_id,
+                                    uint8_t *in_data, uint16_t in_len,
+                                    uint8_t *out_data);
 
 //--------------------------------------------------------------------+
 // Secure Gateway Implementation (Non-Secure World Side)
 //--------------------------------------------------------------------+
 
-// Placeholder for the Secure World entry point function pointer
-// In a real TF-M environment, this would be a specific veneer call.
-typedef bool (*secure_world_entry_t)(secure_gateway_func_id_t func_id, uint8_t *in_data, uint16_t in_len, uint8_t *out_data, uint16_t *out_len);
-
-// NOTE: This is a simulation. In a real TrustZone setup, the Secure World
-// would be a separate binary and the call would be handled by the TF-M core.
-// For now, we simulate the call by directly calling the Secure World logic.
-// The actual Secure World entry point is main_s in secure_world/src/main_s.c
-
-// Forward declaration of the simulated Secure World handler
-extern bool secure_world_handler(secure_gateway_func_id_t func_id, uint8_t *in_data, uint16_t in_len, uint8_t *out_data, uint16_t *out_len);
-
 void secure_gateway_init(void) {
-    printf("NS-Gateway: Initializing Secure World (SIMULATED JUMP)...\n");
-    // In a real scenario, this would be a jump to the Secure World reset vector.
-    // For now, we just print a message.
-    
-    // Simulate a call to the Secure World initialization function
-    // secure_world_handler(SG_INIT, NULL, 0, NULL, NULL);
-    printf("NS-Gateway: Secure World initialization complete.\n");
+  printf("NS-Gateway: Initializing Secure World...\n");
+  secure_world_handler(SG_INIT, NULL, 0, NULL);
+  printf("NS-Gateway: Secure World initialization complete.\n");
 }
 
-bool secure_gateway_oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in, uint8_t *apdu_out, uint16_t *len_out) {
-    printf("NS-Gateway: Calling Secure World for APDU handling...\n");
-    
-    // Simulate the call to the Secure World
-    // In a real scenario, the data would be copied to a shared memory region
-    // and the Secure World would be notified.
-    
-    // The Secure World handler is responsible for calling the oath_handle_apdu function.
-    return secure_world_handler(SG_OATH_HANDLE_APDU, apdu_in, len_in, apdu_out, len_out);
+bool secure_gateway_oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in,
+                                     uint8_t *apdu_out, uint16_t *len_out) {
+  int32_t result =
+      secure_world_handler(SG_OATH_HANDLE_APDU, apdu_in, len_in, apdu_out);
+  if (result < 0)
+    return false;
+  *len_out = (uint16_t)result;
+  return true;
+}
+
+bool secure_gateway_hsm_gen_key(uint8_t slot, uint8_t *status) {
+  uint8_t in_data = slot;
+  uint8_t out_data[1];
+  int32_t result = secure_world_handler(SG_HSM_GEN_KEY, &in_data, 1, out_data);
+  if (result < 0)
+    return false;
+  *status = out_data[0];
+  return true;
+}
+
+bool secure_gateway_hsm_get_pubkey(uint8_t slot, uint8_t *pubkey,
+                                   uint16_t *pubkey_len) {
+  uint8_t in_data = slot;
+  uint8_t out_data[65]; // 1 byte status + 64 bytes pubkey
+  int32_t result =
+      secure_world_handler(SG_HSM_GET_PUBKEY, &in_data, 1, out_data);
+  if (result < 1)
+    return false;
+  if (out_data[0] != 0)
+    return false; // HSM_STATUS_OK = 0
+  *pubkey_len = (uint16_t)(result - 1);
+  memcpy(pubkey, out_data + 1, *pubkey_len);
+  return true;
+}
+
+bool secure_gateway_hsm_sign(uint8_t slot, const uint8_t *hash, uint8_t *sig,
+                             uint16_t *sig_len) {
+  uint8_t in_data[33];
+  in_data[0] = slot;
+  memcpy(in_data + 1, hash, 32);
+
+  uint8_t out_data[65]; // 1 byte status + 64 bytes sig
+  int32_t result = secure_world_handler(SG_HSM_SIGN, in_data, 33, out_data);
+  if (result < 1)
+    return false;
+  if (out_data[0] != 0)
+    return false;
+  *sig_len = (uint16_t)(result - 1);
+  memcpy(sig, out_data + 1, *sig_len);
+  return true;
 }
