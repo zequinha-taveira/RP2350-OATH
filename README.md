@@ -8,7 +8,7 @@
 **A secure, open-source 2FA token fork for RP2350, reverse-engineered for total compatibility with Yubico Authenticator and YubiKey software.**
 
 > [!NOTE]
-> **What is a Fork?** A fork is a copy of a repository. It allows you to freely experiment with changes without affecting the original project. This fork specifically focuses on Yubico compatibility.
+> **What is a Fork?** A fork is a **Yubico-compatible copy of the original repository**. This term refers to the main open-source software repositories provided by Yubico themselves, as their products are designed to be used with their own and compatible open-source tools. This project is aligned with the official open-source standards and tools maintained by **Yubico (under their official GitHub account)**, ensuring that this RP2350 implementation functions as a first-class citizen in the Yubico software ecosystem.
 
 ---
 

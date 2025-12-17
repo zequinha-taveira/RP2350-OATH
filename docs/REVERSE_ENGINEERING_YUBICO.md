@@ -3,7 +3,7 @@
 This document outlines the technical findings from reverse engineering the Yubico OATH protocol (YKOATH) and its interaction with Yubico software tools. These findings were used to create the **RP2350-YKOATH** fork.
 
 > [!NOTE]
-> **A fork is a copy of a repository.** This fork specifically focuses on total Yubico compatibility through protocol reverse engineering.
+> **A fork is a Yubico-compatible copy of the original repository.** This refers to the main open-source software repositories provided by Yubico themselves, as their products are designed to be used with their own and compatible open-source tools. This project specifically focuses on total Yubico compatibility by aligning with the official open-source protocols and tools maintained in **Yubico's GitHub repositories**.
 
 ## 1. USB Interface Requirements
 
