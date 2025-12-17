@@ -12,13 +12,20 @@
 
 O **RP2350-OATH** é um projeto de firmware que transforma o microcontrolador Raspberry Pi RP2350 em um dispositivo de autenticação de dois fatores (2FA) **seguro** e totalmente funcional. Ele implementa o protocolo OATH (TOTP/HOTP) sobre uma interface USB CCID (Smart Card), permitindo que seja gerenciado pelo aplicativo **Yubico Authenticator**.
 
-Esta versão 2.0 do projeto foi atualizada para aproveitar ao máximo os **recursos de segurança integrados em hardware** do RP2350, oferecendo uma alternativa robusta, auditável e de baixo custo às soluções comerciais.
+Esta versão 2.1 do projeto foi atualizada para aproveitar ao máximo os **recursos de segurança integrados em hardware** do RP2350, oferecendo uma alternativa robusta, auditável e de baixo custo às soluções comerciais.
 
-## ✨ Principais Recursos (Versão 2.0)
+## ✨ Principais Recursos (Versão 2.1)
 
 - ✅ **Compatibilidade com Yubico Authenticator**: Gerenciamento de credenciais através de um aplicativo confiável e multiplataforma.
 - ✅ **Protocolo OATH**: Suporte para TOTP (Time-based One-Time Passwords) e HOTP (HMAC-based One-Time Passwords).
 - ✅ **Interface USB CCID**: Emulação de um leitor de Smart Card para comunicação com o host.
+- ✅ **WebUSB para Configuração Avançada**: Interface completa via navegador para gerenciamento avançado.
+- ✅ **FIDO2/U2F**: Autenticação passwordless completa com suporte a WebAuthn.
+- ✅ **WebCrypto API**: Geração de chaves, assinatura, verificação e criptografia (ECDSA, RSA, AES, HMAC).
+- ✅ **Bioenrollment**: Registro de fingerprints (até 5) com verificação de qualidade.
+- ✅ **CTAP2.1 Avançado**: Credential Management, Selection, Configuração avançada.
+- ✅ **WebSocket Server**: Comunicação em tempo real e notificações push.
+- ✅ **Dashboard Web**: Interface gráfica completa para gerenciamento em tempo real.
 - ✅ **Segurança Reforçada por Hardware**:
     - **Secure Boot**: Garante que apenas firmware assinado e autorizado seja executado.
     - **Armazenamento de Chaves em OTP**: A chave mestra de criptografia é armazenada na memória OTP (One-Time Programmable), tornando-a permanente e ilegível por software.
@@ -108,6 +115,8 @@ Consulte o guia **[SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md)*
 - **[SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md)**: Guia detalhado para configurar o Secure Boot, OTP e TrustZone.
 - **[PROTOCOL.md](docs/PROTOCOL.md)**: Detalhes sobre o protocolo YKOATH implementado.
 - **[API.md](docs/API.md)**: Referência da API interna do firmware.
+- **[WEBUSB_FIDO2_IMPLEMENTATION.md](docs/WEBUSB_FIDO2_IMPLEMENTATION.md)**: Especificações técnicas das novas funcionalidades.
+- **[ADVANCED_IMPLEMENTATION_COMPLETE.md](docs/ADVANCED_IMPLEMENTATION_COMPLETE.md)**: Documentação completa da Fase 3.
 
 ## 🗺️ Roadmap (Revisado)
 
@@ -125,8 +134,17 @@ Consulte o guia **[SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md)*
     - ✅ Implementar o Secure Gateway (NSC) e tabela de vetores.
     - ✅ Verificação do boot e chamadas entre mundos (Secure Callable).
 
-- **Fase 3: Recursos Avançados (a definir)** 🔜
-    - Suporte a HOTP, proteção por senha e política de toque.
+- **Fase 3: Recursos Avançados** ✅ **CONCLUÍDA**
+    - ✅ **WebUSB para Configuração Avançada**: Interface completa via navegador
+    - ✅ **WebCrypto API**: Geração de chaves, assinatura, criptografia (ECDSA, RSA, AES, HMAC)
+    - ✅ **FIDO2/U2F**: Autenticação passwordless completa
+    - ✅ **Bioenrollment**: Registro de fingerprints (até 5)
+    - ✅ **CTAP2.1**: Credential Management, Selection, Configuração avançada
+    - ✅ **WebSocket Server**: Comunicação em tempo real e notificações push
+    - ✅ **Dashboard Web**: Interface gráfica completa para gerenciamento
+    - ✅ **HOTP**: Suporte a HMAC-based One-Time Passwords
+    - ✅ **Proteção por PIN**: Políticas de segurança e verificação
+    - ✅ **Política de Toque**: User Presence verification
 
 ## 🤝 Contribuindo
 
