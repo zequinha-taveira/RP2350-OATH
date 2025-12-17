@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
+include(pico_sdk_import.cmake)
+
 # Define the Secure World project
 project(secure_app C CXX ASM)
 
@@ -34,9 +36,12 @@ add_executable(secure_app
     # Add other sources as needed recursively or explicitly
 )
 
+pico_add_pio_assembly(ws2812 src/drivers/ws2812.pio)
+
 # Include directories
 target_include_directories(secure_app PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${PICO_SDK_PATH}
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/src/crypto
     ${CMAKE_CURRENT_LIST_DIR}/src/oath

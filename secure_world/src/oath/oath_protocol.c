@@ -10,8 +10,9 @@
 
 // Global state for the OATH application
 static bool oath_app_selected = false;
-static uint32_t last_list_index = 0;  // For paged listing
-static bool session_unlocked = false; // Tracks if password has been validated
+static uint32_t last_list_index = 0;   // For paged listing
+static bool session_unlocked = false;  // Tracks if password has been validated
+static bool mgmt_app_selected = false; // Tracks management app selection
 static uint64_t last_touch_request = 0;
 
 // Hardware configuration (To be moved to board config)
@@ -61,12 +62,25 @@ static void handle_select_apdu(uint8_t *apdu_in, uint16_t len_in,
 
   if (lc == OATH_AID_LEN && memcmp(aid, OATH_AID, OATH_AID_LEN) == 0) {
     oath_app_selected = true;
+    mgmt_app_selected = false;
     printf("OATH: Application selected successfully.\n");
-    // Standard response for OATH SELECT is empty or version info + SW_OK
-    // For simplicity, just SW_OK
+    // Standard response for OATH SELECT is version info (3 bytes) + SW_OK
+    apdu_out[0] = 0x79; // Version tag
+    apdu_out[1] = 0x03; // length
+    apdu_out[2] = 0x05; // Major
+    apdu_out[3] = 0x04; // Minor
+    apdu_out[4] = 0x03; // Patch
+    *len_out = 5;
+    send_sw(SW_OK, apdu_out + 5, len_out);
+    *len_out += 5;
+  } else if (lc == MGMT_AID_LEN && memcmp(aid, MGMT_AID, MGMT_AID_LEN) == 0) {
+    oath_app_selected = false;
+    mgmt_app_selected = true;
+    printf("MGMT: Management application selected.\n");
     send_sw(SW_OK, apdu_out, len_out);
   } else {
     oath_app_selected = false;
+    mgmt_app_selected = false;
     printf("OATH: Application selection failed.\n");
     send_sw(SW_FILE_NOT_FOUND, apdu_out, len_out);
   }
@@ -207,7 +221,7 @@ static void handle_list_command(uint8_t *apdu_out, uint16_t *len_out) {
 // Handler for CALCULATE Command (0x04 for TRUNCATED Response)
 // Data: [0x71, name_len, name, 0x74, 8, challenge...]
 static void handle_calculate_command(uint8_t *data, uint16_t len,
-                                      uint8_t *apdu_out, uint16_t *len_out) {
+                                     uint8_t *apdu_out, uint16_t *len_out) {
   // Parse Name
   uint16_t offset = 0;
   if (data[offset++] != 0x71) {
@@ -333,7 +347,7 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
 
 // Handler for SET CODE (0x03)
 static void handle_set_code(uint8_t *data, uint16_t len, uint8_t *apdu_out,
-                             uint16_t *len_out) {
+                            uint16_t *len_out) {
   // Format: Key + Challenge (New Password)
   // Actually Yk: 0x03 | Key + 8 byte challenge (derivation/salt?)
   // Simplification: Data IS the new password
@@ -353,14 +367,14 @@ static void handle_time_sync(uint8_t *data, uint16_t len, uint8_t *apdu_out,
     send_sw(SW_WRONG_LENGTH, apdu_out, len_out);
     return;
   }
-  
+
   uint64_t timestamp = 0;
   for (int i = 0; i < 8; i++) {
     timestamp = (timestamp << 8) | data[i];
   }
-  
+
   time_sync_set_timestamp(timestamp);
-  
+
   // Response: 1 byte status (0x01 = success)
   apdu_out[0] = 0x01;
   *len_out = 1;
@@ -379,6 +393,17 @@ static void handle_validate(uint8_t *data, uint16_t len, uint8_t *apdu_out,
     session_unlocked = false;
     send_sw(SW_SECURITY_STATUS_NOT_SAT, apdu_out, len_out);
   }
+}
+
+// Handler for GET VERSION (0x06)
+static void handle_version_command(uint8_t *apdu_out, uint16_t *len_out) {
+  // Return version 5.4.3 (consistent with a modern YubiKey 5)
+  apdu_out[0] = 0x05;
+  apdu_out[1] = 0x04;
+  apdu_out[2] = 0x03;
+  *len_out = 3;
+  send_sw(SW_OK, apdu_out + 3, len_out);
+  *len_out += 3;
 }
 
 // Handler for the Yubico OATH CALCULATE/LIST command (INS=0xA1 or others)
@@ -482,12 +507,19 @@ void oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in, uint8_t *apdu_out,
   case 0x02: // DELETE
   case 0x03: // SET CODE
   case 0x04: // RESET or TIME SYNC (custom)
+  case 0x06: // VERSION
   case 0xA1: // CALC or LIST
-    handle_oath_command(apdu_in, len_in, apdu_out, len_out);
+  case 0xA3: // VALIDATE
+    if (ins == 0x06) {
+      handle_version_command(apdu_out, len_out);
+    } else {
+      handle_oath_command(apdu_in, len_in, apdu_out, len_out);
+    }
     break;
 
   case 0x05: // TIME SYNC (custom command)
-    handle_time_sync(apdu_in + APDU_DATA_POS, apdu_in[APDU_LC_POS], apdu_out, len_out);
+    handle_time_sync(apdu_in + APDU_DATA_POS, apdu_in[APDU_LC_POS], apdu_out,
+                     len_out);
     break;
 
   default:

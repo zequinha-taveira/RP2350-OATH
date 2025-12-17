@@ -31,6 +31,8 @@
 // APDU Instructions
 #define INS_SELECT 0xA4
 #define INS_CALCULATE 0xA1 // Used for CALCULATE, LIST, etc. in YKOATH
+#define INS_VERSION 0x06   // Get Version
+#define INS_VALIDATE 0xA3  // Validate PIN (YKOATH standard)
 
 //--------------------------------------------------------------------+
 // Yubico OATH Application Constants
@@ -41,6 +43,11 @@
 #define OATH_AID_LEN 7
 static const uint8_t OATH_AID[OATH_AID_LEN] = {0xA0, 0x00, 0x00, 0x05,
                                                0x27, 0x20, 0x01};
+
+// Application Identifier (AID) for Yubico Management
+#define MGMT_AID_LEN 8
+static const uint8_t MGMT_AID[MGMT_AID_LEN] = {0xA0, 0x00, 0x00, 0x05,
+                                               0x27, 0x47, 0x11, 0x17};
 
 // OATH Command Tags (used in the data field of INS_CALCULATE)
 #define OATH_TAG_NAME 0x71

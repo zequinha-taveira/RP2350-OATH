@@ -4,24 +4,24 @@
 // Device Descriptors
 // Updated to support WebUSB and FIDO2
 //--------------------------------------------------------------------+
-tusb_desc_device_t const desc_device = {.bLength = sizeof(tusb_desc_device_t),
-                                        .bDescriptorType = TUSB_DESC_DEVICE,
-                                        .bcdUSB = 0x0210, // USB 2.1 for WebUSB
-                                        .bDeviceClass = 0x00,
-                                        .bDeviceSubClass = 0x00,
-                                        .bDeviceProtocol = 0x00,
-                                        .bMaxPacketSize0 =
-                                            CFG_TUD_ENDPOINT0_SIZE,
+tusb_desc_device_t const desc_device = {
+    .bLength = sizeof(tusb_desc_device_t),
+    .bDescriptorType = TUSB_DESC_DEVICE,
+    .bcdUSB = 0x0210, // USB 2.1 for WebUSB
+    .bDeviceClass = 0x00,
+    .bDeviceSubClass = 0x00,
+    .bDeviceProtocol = 0x00,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-                                        .idVendor = 0x1209, // USB Implementers Forum
-                                        .idProduct = 0x4D41, // 'MA' for RP2350-OATH
-                                        .bcdDevice = 0x0200, // Version 2.0
+    .idVendor = 0x1050,  // Yubico
+    .idProduct = 0x0407, // YubiKey 5 Series CCID+FIDO+OTP
+    .bcdDevice = 0x0543, // Version 5.4.3
 
-                                        .iManufacturer = 0x01,
-                                        .iProduct = 0x02,
-                                        .iSerialNumber = 0x03,
+    .iManufacturer = 0x01,
+    .iProduct = 0x02,
+    .iSerialNumber = 0x03,
 
-                                        .bNumConfigurations = 0x01};
+    .bNumConfigurations = 0x01};
 
 uint8_t const *tud_descriptor_device_cb(void) {
   return (uint8_t const *)&desc_device;
@@ -74,11 +74,10 @@ uint8_t const *tud_descriptor_device_cb(void) {
 // WebUSB Interface Descriptor (Vendor Specific)
 #define TUD_WEBUSB_DESCRIPTOR(_itfnum, _stridx, _epout, _epin, _epsize)        \
   /* Interface Descriptor */                                                   \
-  9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, 0xFF /* Vendor Specific */, 0x00, 0x00, \
-      _stridx,                /* Interface String */                           \
-      /* Endpoint Out */                                                       \
-      7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_BULK, U16_TO_U8S_LE(_epsize), 0, \
-      /* Endpoint In */                                                        \
+  9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, 0xFF /* Vendor Specific */, 0x00,     \
+      0x00, _stridx, /* Interface String */ /* Endpoint Out */                 \
+      7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_BULK, U16_TO_U8S_LE(_epsize),   \
+      0, /* Endpoint In */                                                     \
       7, TUSB_DESC_ENDPOINT, _epin, TUSB_XFER_BULK, U16_TO_U8S_LE(_epsize), 0
 
 //--------------------------------------------------------------------+
@@ -91,13 +90,13 @@ uint8_t const *tud_descriptor_device_cb(void) {
 #define TUD_FIDO2_DESCRIPTOR(_itfnum, _stridx, _epout, _epin, _epsize)         \
   /* Interface Descriptor */                                                   \
   9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, 0x03 /* HID */, 0x00, 0x00,           \
-      _stridx,                /* Interface String */                           \
-      /* HID Descriptor */                                                     \
-      9, 0x21, 0x11, 0x01, 0x20, 0x00, 0x01, 0x22, 0x34, 0x00,                \
-      /* Endpoint Out */                                                       \
-      7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_INTERRUPT, U16_TO_U8S_LE(_epsize), 10, \
-      /* Endpoint In */                                                        \
-      7, TUSB_DESC_ENDPOINT, _epin, TUSB_XFER_INTERRUPT, U16_TO_U8S_LE(_epsize), 10
+      _stridx, /* Interface String */ /* HID Descriptor */                     \
+      9, 0x21, 0x11, 0x01, 0x20, 0x00, 0x01, 0x22, 0x34,                       \
+      0x00, /* Endpoint Out */                                                 \
+      7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_INTERRUPT,                      \
+      U16_TO_U8S_LE(_epsize), 10, /* Endpoint In */                            \
+      7, TUSB_DESC_ENDPOINT, _epin, TUSB_XFER_INTERRUPT,                       \
+      U16_TO_U8S_LE(_epsize), 10
 
 //--------------------------------------------------------------------+
 // Configuration Descriptor
@@ -105,32 +104,33 @@ uint8_t const *tud_descriptor_device_cb(void) {
 //--------------------------------------------------------------------+
 
 enum {
-    ITF_NUM_CCID,      // CCID Interface
-    ITF_NUM_WEBUSB,    // WebUSB Interface
-    ITF_NUM_FIDO2,     // FIDO2 HID Interface
-    ITF_NUM_TOTAL
+  ITF_NUM_CCID,   // CCID Interface
+  ITF_NUM_WEBUSB, // WebUSB Interface
+  ITF_NUM_FIDO2,  // FIDO2 HID Interface
+  ITF_NUM_TOTAL
 };
 
-#define EPNUM_CCID_OUT   0x02
-#define EPNUM_CCID_IN    0x82
+#define EPNUM_CCID_OUT 0x02
+#define EPNUM_CCID_IN 0x82
 #define EPNUM_WEBUSB_OUT 0x03
-#define EPNUM_WEBUSB_IN  0x83
-#define EPNUM_FIDO2_OUT  0x04
-#define EPNUM_FIDO2_IN   0x84
+#define EPNUM_WEBUSB_IN 0x83
+#define EPNUM_FIDO2_OUT 0x04
+#define EPNUM_FIDO2_IN 0x84
 
 uint8_t const desc_configuration[] = {
     // Config number, interface count, string index, total length, attribute,
     // power in mA
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0,
                           TUD_CONFIG_DESC_LEN + TUD_CCID_DESC_LEN +
-                          TUD_WEBUSB_DESC_LEN + TUD_FIDO2_DESC_LEN,
+                              TUD_WEBUSB_DESC_LEN + TUD_FIDO2_DESC_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
     // CCID Interface (Smart Card)
     TUD_CCID_DESCRIPTOR(ITF_NUM_CCID, 4, EPNUM_CCID_OUT, EPNUM_CCID_IN, 64),
 
     // WebUSB Interface (Vendor Specific)
-    TUD_WEBUSB_DESCRIPTOR(ITF_NUM_WEBUSB, 5, EPNUM_WEBUSB_OUT, EPNUM_WEBUSB_IN, 64),
+    TUD_WEBUSB_DESCRIPTOR(ITF_NUM_WEBUSB, 5, EPNUM_WEBUSB_OUT, EPNUM_WEBUSB_IN,
+                          64),
 
     // FIDO2 HID Interface
     TUD_FIDO2_DESCRIPTOR(ITF_NUM_FIDO2, 6, EPNUM_FIDO2_OUT, EPNUM_FIDO2_IN, 64),
@@ -148,8 +148,8 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
 // array of pointer to string descriptors
 char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
-    "Raspberry Pi",             // 1: Manufacturer
-    "RP2350 OATH Token",        // 2: Product
+    "Yubico",                   // 1: Manufacturer
+    "YubiKey 5 FIDO+CCID",      // 2: Product
     "123456",                   // 3: Serials, should use chip ID
     "CCID Interface",           // 4: CCID Interface
     "WebUSB Interface",         // 5: WebUSB Interface
