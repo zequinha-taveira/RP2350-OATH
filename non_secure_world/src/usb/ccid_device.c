@@ -122,14 +122,14 @@ static bool ccid_user_xfer_cb(uint8_t rhport, uint8_t ep_addr,
   return true;
 }
 
-static const usbd_class_driver_t ccid_driver = {.name = "CCID",
-                                                .init = ccid_user_init,
-                                                .reset = ccid_user_reset,
-                                                .open = ccid_user_open,
-                                                .control_xfer_cb =
-                                                    ccid_user_control_xfer_cb,
-                                                .xfer_cb = ccid_user_xfer_cb,
-                                                .sof = NULL};
+const usbd_class_driver_t ccid_driver = {.name = "CCID",
+                                         .init = ccid_user_init,
+                                         .reset = ccid_user_reset,
+                                         .open = ccid_user_open,
+                                         .control_xfer_cb =
+                                             ccid_user_control_xfer_cb,
+                                         .xfer_cb = ccid_user_xfer_cb,
+                                         .sof = NULL};
 
 // Note: This function is now handled by usb_composite.c
 // usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {

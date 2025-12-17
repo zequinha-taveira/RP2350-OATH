@@ -11,8 +11,13 @@ add_executable(non_secure_app
     src/main.c
     src/usb_descriptors.c
     src/usb/ccid_device.c
+    src/usb/fido2_device.c
+    src/usb/fido2_ctap21.c
+    src/usb/fido2_bioenrollment.c
+    src/usb/webusb_device.c
+    src/usb/webusb_crypto.c
+    src/usb/usb_composite.c
     src/secure_gateway.c
-    # src/usb/...? 
 )
 
 # Include directories

@@ -191,21 +191,14 @@ static bool webusb_user_xfer_cb(uint8_t rhport, uint8_t ep_addr,
   return true;
 }
 
-static const usbd_class_driver_t webusb_driver = {
-    .name = "WebUSB",
-    .init = webusb_user_init,
-    .reset = webusb_user_reset,
-    .open = webusb_user_open,
-    .control_xfer_cb = webusb_user_control_xfer_cb,
-    .xfer_cb = webusb_user_xfer_cb,
-    .sof = NULL};
-
-usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {
-  // This will be called by TinyUSB to get the driver
-  // We need to return both CCID and WebUSB drivers
-  // This function will be modified in the main app to handle multiple drivers
-  return &webusb_driver;
-}
+const usbd_class_driver_t webusb_driver = {.name = "WebUSB",
+                                           .init = webusb_user_init,
+                                           .reset = webusb_user_reset,
+                                           .open = webusb_user_open,
+                                           .control_xfer_cb =
+                                               webusb_user_control_xfer_cb,
+                                           .xfer_cb = webusb_user_xfer_cb,
+                                           .sof = NULL};
 
 bool webusb_send_response(uint8_t const *buffer, uint16_t length) {
   if (!webusb_state.is_configured || webusb_state.ep_in == 0)
