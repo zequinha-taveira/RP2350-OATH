@@ -78,6 +78,16 @@ static void handle_select_apdu(uint8_t *apdu_in, uint16_t len_in,
     mgmt_app_selected = true;
     printf("MGMT: Management application selected.\n");
     send_sw(SW_OK, apdu_out, len_out);
+  } else if (lc == PIV_AID_LEN && memcmp(aid, PIV_AID, PIV_AID_LEN) == 0) {
+    oath_app_selected = false;
+    mgmt_app_selected = false;
+    printf("PIV: PIV application selected (STUB).\n");
+    send_sw(SW_OK, apdu_out, len_out);
+  } else if (lc == FIDO_AID_LEN && memcmp(aid, FIDO_AID, FIDO_AID_LEN) == 0) {
+    oath_app_selected = false;
+    mgmt_app_selected = false;
+    printf("FIDO: FIDO application selected (STUB).\n");
+    send_sw(SW_OK, apdu_out, len_out);
   } else {
     oath_app_selected = false;
     mgmt_app_selected = false;

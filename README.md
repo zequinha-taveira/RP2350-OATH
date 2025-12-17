@@ -15,8 +15,11 @@
 ## 🎯 Fork Overview
 
 This fork of the RP2350-OATH project is dedicated to achieving **100% software parity** with official YubiKey devices. By using hardware-level reverse engineering of the OATH/CCID protocol, this version ensures seamless operation with:
-- **Yubico Authenticator** (Desktop & Mobile)
+- **Yubico Authenticator** (Desktop & Mobile) - included in `tools/yubioath-flutter`
 - **YubiKey Manager (`ykman`)** - included in `tools/yubikey-manager`
+- **Yubico PIV Tool** - included in `tools/yubico-piv-tool`
+- **Yubico Personalization Tool** - included in `tools/yubikey-personalization`
+- **Yubico-C SDK** - included in `tools/yubico-c`
 - **System-level Smart Card drivers**
 
 ### Key Improvements in this Fork:
@@ -102,7 +105,7 @@ git clone https://github.com/seu-usuario/rp2350-oath.git
 cd rp2350-oath
 ```
 
-2. **Initialize the submodules (libcotp, tinyusb, yubikey-manager):**
+3. **Initialize all submodules (libcotp, tinyusb, and Yubico tools):**
  
  ```bash
  git submodule update --init --recursive

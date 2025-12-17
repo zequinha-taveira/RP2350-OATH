@@ -418,7 +418,11 @@ Este documento detalha o plano abrangente de testes de compatibilidade para gara
 # Testes de Protocolo
 - [ ] Wireshark (USB capture)
 - [ ] USBlyzer
-- [ ] Yubikey Manager (ykman) - included in `tools/yubikey-manager`
+- [ ] Yubikey Manager (ykman) - `tools/yubikey-manager`
+- [ ] Yubikey Personalization Tool - `tools/yubikey-personalization`
+- [ ] Yubico Authenticator (Flutter) - `tools/yubioath-flutter`
+- [ ] Yubico PIV Tool - `tools/yubico-piv-tool`
+- [ ] Yubico-C SDK - `tools/yubico-c`
 
 # Testes de Segurança
 - [ ] OWASP ZAP
