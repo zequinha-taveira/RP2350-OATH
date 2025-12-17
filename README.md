@@ -1,16 +1,29 @@
-# RP2350-OATH: Firmware 2FA Open-Source com Segurança Reforçada
+# RP2350-YKOATH: Full Yubico Compatibility Fork
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Platform](https://img.shields.io/badge/Platform-RP2350-green.svg)](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html)
 [![Security](https://img.shields.io/badge/Security-TrustZone%20%7C%20Secure%20Boot-purple.svg)](docs/SECURITY_IMPLEMENTATION.md)
+[![Compatibility](https://img.shields.io/badge/Compatibility-Yubico%20Authenticator-red.svg)](docs/REVERSE_ENGINEERING_YUBICO.md)
 
-**Um token de autenticação de dois fatores (2FA) open-source, seguro e compatível com Yubico Authenticator, baseado no microcontrolador RP2350.**
+**A secure, open-source 2FA token fork for RP2350, reverse-engineered for total compatibility with Yubico Authenticator and YubiKey software.**
+
+> [!NOTE]
+> **What is a Fork?** A fork is a copy of a repository. It allows you to freely experiment with changes without affecting the original project. This fork specifically focuses on Yubico compatibility.
 
 ---
 
-## 🎯 Visão Geral
+## 🎯 Fork Overview
 
-O **RP2350-OATH** é um projeto de firmware que transforma o microcontrolador Raspberry Pi RP2350 em um dispositivo de autenticação de dois fatores (2FA) **seguro** e totalmente funcional. Ele implementa o protocolo OATH (TOTP/HOTP) sobre uma interface USB CCID (Smart Card), permitindo que seja gerenciado pelo aplicativo **Yubico Authenticator**.
+This fork of the RP2350-OATH project is dedicated to achieving **100% software parity** with official YubiKey devices. By using hardware-level reverse engineering of the OATH/CCID protocol, this version ensures seamless operation with:
+- **Yubico Authenticator** (Desktop & Mobile)
+- **YubiKey Manager (`ykman`)**
+- **System-level Smart Card drivers**
+
+### Key Improvements in this Fork:
+- ✅ **Official Yubico VID/PID**: Recognized directly as a YubiKey 5 Series.
+- ✅ **Dynamic Hardware Serial**: Each device has a unique USB serial number matched to the RP2350's silicon ID.
+- ✅ **Extended YKOATH Protocol**: Full implementation of `GET VERSION`, Management AID selection, and standardized TLV responses.
+- ✅ **Bug Fixes**: Critical fixes for OATH calculation that were present in the upstream version.
 
 Esta versão 2.1 do projeto foi atualizada para aproveitar ao máximo os **recursos de segurança integrados em hardware** do RP2350, oferecendo uma alternativa robusta, auditável e de baixo custo às soluções comerciais.
 

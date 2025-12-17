@@ -1,4 +1,7 @@
+#include "pico/unique_id.h"
 #include "tusb.h"
+#include <stdio.h>
+
 
 //--------------------------------------------------------------------+
 // Device Descriptors
@@ -89,8 +92,8 @@ uint8_t const *tud_descriptor_device_cb(void) {
 // FIDO2 HID Interface Descriptor
 #define TUD_FIDO2_DESCRIPTOR(_itfnum, _stridx, _epout, _epin, _epsize)         \
   /* Interface Descriptor */                                                   \
-  9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, 0x03 /* HID */, 0x00, 0x00,           \
-      _stridx, /* Interface String */ /* HID Descriptor */                     \
+  9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, 0x03 /* HID */, 0x00, 0x00, _stridx,  \
+      /* Interface String */ /* HID Descriptor */                              \
       9, 0x21, 0x11, 0x01, 0x20, 0x00, 0x01, 0x22, 0x34,                       \
       0x00, /* Endpoint Out */                                                 \
       7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_INTERRUPT,                      \
@@ -149,8 +152,8 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
 char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
     "Yubico",                   // 1: Manufacturer
-    "YubiKey 5 FIDO+CCID",      // 2: Product
-    "123456",                   // 3: Serials, should use chip ID
+    "YubiKey 5 FIDO+CCID",      // 2: Product fork
+    "0000000000000000",         // 3: Serials, handled dynamically
     "CCID Interface",           // 4: CCID Interface
     "WebUSB Interface",         // 5: WebUSB Interface
     "FIDO2 Interface",          // 6: FIDO2 Interface
@@ -170,6 +173,17 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
       return NULL;
 
     const char *str = string_desc_arr[index];
+    char serial_str[17];
+
+    if (index == 3) {
+      pico_unique_board_id_t id;
+      pico_get_unique_board_id(&id);
+      for (int i = 0; i < 8; i++) {
+        sprintf(&serial_str[i * 2], "%02X", id.id[i]);
+      }
+      serial_str[16] = '\0';
+      str = serial_str;
+    }
 
     // Cap at max char
     chr_count = (uint8_t)strlen(str);
