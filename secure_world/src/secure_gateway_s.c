@@ -1,5 +1,4 @@
 #include "applet_manager.h"     // Multi-applet manager
-#include "oath/oath_protocol.h" // Secure World OATH logic
 #include "secure_functions.h"   // Ensure definition of __cmse_nonsecure_entry
 #include "secure_gateway.h"     // Shared header for function IDs
 #include "security/hsm.h"       // HSM logic

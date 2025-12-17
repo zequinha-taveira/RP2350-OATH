@@ -1,18 +1,19 @@
 #include "oath_protocol.h"
 #include "apdu_protocol.h" // For APDU and OATH constants
 #include "cotp.h"          // Using libcotp for core logic
-#include "led_driver.h"    // WS2812 Driver
+#include "drivers/led_driver.h"
+#include "hardware/gpio.h"
 #include "oath_storage.h"
 #include "pico/stdlib.h"
+#include "time_sync.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+
 // Global state for the OATH application
-static bool oath_app_selected = false;
-static uint32_t last_list_index = 0;   // For paged listing
-static bool session_unlocked = false;  // Tracks if password has been validated
-static bool mgmt_app_selected = false; // Tracks management app selection
+static uint32_t last_list_index = 0;  // For paged listing
+static bool session_unlocked = false; // Tracks if password has been validated
 static uint64_t last_touch_request = 0;
 
 // Hardware configuration (To be moved to board config)
@@ -52,48 +53,16 @@ static void send_sw(uint16_t sw, uint8_t *apdu_out, uint16_t *len_out) {
 // Handler for the ISO 7816 SELECT command (INS=A4)
 static void handle_select_apdu(uint8_t *apdu_in, uint16_t len_in,
                                uint8_t *apdu_out, uint16_t *len_out) {
-  if (apdu_in[APDU_P1_POS] != 0x04 || apdu_in[APDU_P2_POS] != 0x00) {
-    send_sw(SW_WRONG_LENGTH, apdu_out, len_out);
-    return;
-  }
-
-  uint8_t lc = apdu_in[APDU_LC_POS];
-  uint8_t *aid = apdu_in + APDU_DATA_POS;
-
-  if (lc == OATH_AID_LEN && memcmp(aid, OATH_AID, OATH_AID_LEN) == 0) {
-    oath_app_selected = true;
-    mgmt_app_selected = false;
-    printf("OATH: Application selected successfully.\n");
-    // Standard response for OATH SELECT is version info (3 bytes) + SW_OK
-    apdu_out[0] = 0x79; // Version tag
-    apdu_out[1] = 0x03; // length
-    apdu_out[2] = 0x05; // Major
-    apdu_out[3] = 0x04; // Minor
-    apdu_out[4] = 0x03; // Patch
-    *len_out = 5;
-    send_sw(SW_OK, apdu_out + 5, len_out);
-    *len_out += 5;
-  } else if (lc == MGMT_AID_LEN && memcmp(aid, MGMT_AID, MGMT_AID_LEN) == 0) {
-    oath_app_selected = false;
-    mgmt_app_selected = true;
-    printf("MGMT: Management application selected.\n");
-    send_sw(SW_OK, apdu_out, len_out);
-  } else if (lc == PIV_AID_LEN && memcmp(aid, PIV_AID, PIV_AID_LEN) == 0) {
-    oath_app_selected = false;
-    mgmt_app_selected = false;
-    printf("PIV: PIV application selected (STUB).\n");
-    send_sw(SW_OK, apdu_out, len_out);
-  } else if (lc == FIDO_AID_LEN && memcmp(aid, FIDO_AID, FIDO_AID_LEN) == 0) {
-    oath_app_selected = false;
-    mgmt_app_selected = false;
-    printf("FIDO: FIDO application selected (STUB).\n");
-    send_sw(SW_OK, apdu_out, len_out);
-  } else {
-    oath_app_selected = false;
-    mgmt_app_selected = false;
-    printf("OATH: Application selection failed.\n");
-    send_sw(SW_FILE_NOT_FOUND, apdu_out, len_out);
-  }
+  // Applet Manager already verified the AID.
+  // Standard response for OATH SELECT is version info (3 bytes) + SW_OK
+  apdu_out[0] = 0x79; // Version tag
+  apdu_out[1] = 0x03; // length
+  apdu_out[2] = 0x05; // Major
+  apdu_out[3] = 0x04; // Minor
+  apdu_out[4] = 0x03; // Patch
+  *len_out = 5;
+  send_sw(SW_OK, apdu_out + 5, len_out);
+  *len_out += 5;
 }
 
 // Handler for PUT Command (0x01)
@@ -419,10 +388,6 @@ static void handle_version_command(uint8_t *apdu_out, uint16_t *len_out) {
 // Handler for the Yubico OATH CALCULATE/LIST command (INS=0xA1 or others)
 static void handle_oath_command(uint8_t *apdu_in, uint16_t len_in,
                                 uint8_t *apdu_out, uint16_t *len_out) {
-  if (!oath_app_selected) {
-    send_sw(SW_SECURITY_STATUS_NOT_SAT, apdu_out, len_out);
-    return;
-  }
 
   // Tag is first byte of Data
   uint8_t instr = apdu_in[APDU_INS_POS];
@@ -483,7 +448,6 @@ void oath_init(void) {
   led_driver_init();      // Init WS2812
   led_set_color(0, 0, 0); // Off initially
   oath_storage_init();
-  oath_app_selected = false;
   session_unlocked = false;
   gpio_init(TOUCH_BUTTON_PIN);
   gpio_set_dir(TOUCH_BUTTON_PIN, GPIO_IN);

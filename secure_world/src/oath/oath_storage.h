@@ -28,6 +28,25 @@ typedef struct {
   uint8_t touch_required; // 0x01 if touch required
 } oath_credential_t;
 
+// Per-credential encryption structure
+typedef struct {
+  uint8_t iv[12];          // Initialization Vector (GCM)
+  uint8_t ciphertext[256]; // Encrypted data (enough for oath_credential_t)
+  uint8_t ciphertext_len;  // Length of ciphertext
+  uint8_t tag[16];         // Authentication tag
+} encrypted_credential_t;
+
+// Persistence structure
+typedef struct {
+  uint32_t magic; // 0xDEADBEEF
+  uint32_t version;
+  uint8_t access_code_hash[32]; // SHA-256 hash of PIN
+  uint8_t access_code_set;      // 0 = not set, 1 = set
+  encrypted_credential_t encrypted_creds[MAX_CREDENTIALS];
+  bool slot_used[MAX_CREDENTIALS];
+  uint8_t master_key_salt[16]; // Salt for key derivation
+} oath_persist_t;
+
 // Initialize OATH storage
 void oath_storage_init(void);
 
@@ -59,5 +78,13 @@ bool oath_storage_verify_password(const uint8_t *code, uint8_t len);
 
 // Check if any password is currently set
 bool oath_storage_is_password_set(void);
+
+// Helper functions for credential encryption (implemented in aes_gcm.c or
+// oath_storage.c)
+bool encrypt_credential(const uint8_t *key, const oath_credential_t *cred,
+                        encrypted_credential_t *encrypted);
+bool decrypt_credential(const uint8_t *key,
+                        const encrypted_credential_t *encrypted,
+                        oath_credential_t *cred);
 
 #endif // OATH_STORAGE_H
