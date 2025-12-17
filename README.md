@@ -118,12 +118,12 @@ Consulte o guia **[SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md)*
     - ✅ Implementar o armazenamento da **chave mestra na OTP**.
     - ✅ Configurar o projeto para **Secure Boot**.
 
-- **Fase 2: Implementação do TrustZone (8 semanas)** 🚧 **EM ANDAMENTO (Esqueleto Criado)**
+- **Fase 2: Implementação do TrustZone (8 semanas)** ✅ **CONCLUÍDA**
     - ✅ Refatorar o código para separar os mundos Seguro e Não Seguro (Estrutura de diretórios criada).
     - ✅ Configuração do Build System (CMake) para compilação separada (SW/NSW).
     - ✅ Definição dos Linker Scripts (.ld) para isolamento de memória (Flash/RAM).
-    - 🚧 Implementar o Secure Gateway (NSC) e tabela de vetores.
-    - 🔜 **Próximo Passo**: Verificação do boot e chamadas entre mundos (Secure Callable).
+    - ✅ Implementar o Secure Gateway (NSC) e tabela de vetores.
+    - ✅ Verificação do boot e chamadas entre mundos (Secure Callable).
 
 - **Fase 3: Recursos Avançados (a definir)** 🔜
     - Suporte a HOTP, proteção por senha e política de toque.
