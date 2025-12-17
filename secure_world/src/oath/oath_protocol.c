@@ -2,14 +2,13 @@
 #include "apdu_protocol.h" // For APDU and OATH constants
 #include "cotp.h"          // Using libcotp for core logic
 #include "drivers/led_driver.h"
-#include "hardware/gpio.h"
 #include "oath_storage.h"
-#include "pico/stdlib.h"
 #include "time_sync.h"
+#include <hardware/gpio.h>
+#include <pico/stdlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 // Global state for the OATH application
 static uint32_t last_list_index = 0;  // For paged listing

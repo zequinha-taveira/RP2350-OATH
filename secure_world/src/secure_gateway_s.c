@@ -1,7 +1,7 @@
-#include "applet_manager.h"     // Multi-applet manager
-#include "secure_functions.h"   // Ensure definition of __cmse_nonsecure_entry
-#include "secure_gateway.h"     // Shared header for function IDs
-#include "security/hsm.h"       // HSM logic
+#include "applet_manager.h"   // Multi-applet manager
+#include "secure_functions.h" // Ensure definition of __cmse_nonsecure_entry
+#include "secure_gateway.h"   // Shared header for function IDs
+#include "security/hsm.h"     // HSM logic
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -34,7 +34,7 @@ secure_world_handler(secure_gateway_func_id_t func_id, uint8_t *in_data,
 
   case SG_OATH_HANDLE_APDU:
     // Call the Applet Manager to route the APDU
-    applet_manager_handle_apdu(in_data, in_len, out_data, &out_len_val);
+    applet_manager_process_apdu(in_data, in_len, out_data, &out_len_val);
     return (int32_t)out_len_val;
 
   case SG_GET_TIME:

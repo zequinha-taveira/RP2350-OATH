@@ -1,12 +1,13 @@
 #include "oath_storage.h"
-#include "crypto/aes.h"
-#include "crypto/aes_gcm.h"
-#include "crypto/sha256.h"
-#include "hardware/flash.h"
-#include "hardware/sync.h"
-#include "pico/rand.h"
-#include "pico/stdlib.h"
+#include "../crypto/aes.h"
+#include "../crypto/aes_gcm.h"
+#include "../crypto/sha256.h"
 #include "security/security.h"
+#include <hardware/address_mapped.h>
+#include <hardware/flash.h>
+#include <hardware/sync.h>
+#include <pico/rand.h>
+#include <pico/stdlib.h>
 #include <stdio.h>
 #include <string.h>
 

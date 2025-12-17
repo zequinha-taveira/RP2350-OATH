@@ -53,11 +53,6 @@ static const uint8_t MGMT_AID[MGMT_AID_LEN] = {0xA0, 0x00, 0x00, 0x05,
 #define PIV_AID_LEN 5
 static const uint8_t PIV_AID[PIV_AID_LEN] = {0xA0, 0x00, 0x00, 0x03, 0x08};
 
-// Application Identifier (AID) for FIDO2/U2F
-#define FIDO_AID_LEN 8
-static const uint8_t FIDO_AID[FIDO_AID_LEN] = {0xA0, 0x00, 0x00, 0x06,
-                                               0x47, 0x2F, 0x00, 0x01};
-
 // OATH Command Tags (used in the data field of INS_CALCULATE)
 #define OATH_TAG_NAME 0x71
 #define OATH_TAG_CHALLENGE 0x74

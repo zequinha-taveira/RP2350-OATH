@@ -4,6 +4,11 @@ set(SECURE_APP_SOURCES
     src/applet_manager.c
     src/oath/oath_protocol.c
     src/oath/oath_storage.c
+    src/oath/iso7816_4.c
+    src/oath/openpgp_applet.c
+    src/oath/openpgp_storage.c
+    src/oath/fido2_applet.c
+    src/oath/fido2_storage.c
     src/security/security.c
     src/security/hsm.c
     src/time_sync.c
