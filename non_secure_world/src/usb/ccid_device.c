@@ -130,10 +130,11 @@ static const usbd_class_driver_t ccid_driver = {.name = "CCID",
                                                 .xfer_cb = ccid_user_xfer_cb,
                                                 .sof = NULL};
 
-usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {
-  *driver_count = 1;
-  return &ccid_driver;
-}
+// Note: This function is now handled by usb_composite.c
+// usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {
+//   *driver_count = 1;
+//   return &ccid_driver;
+// }
 
 bool tud_ccid_tx(uint8_t rhport, uint8_t const *buffer, uint32_t bufsize) {
   if (ccid_state.ep_in == 0)

@@ -39,16 +39,21 @@
 #define CFG_TUD_CDC_RX_BUFSIZE      64
 #define CFG_TUD_CDC_TX_BUFSIZE      64
 
-//------------- HID (Optional for Button/LED) -------------//
-// Not strictly needed for CCID, but useful for user interaction
-#define CFG_TUD_HID                 0
+//------------- HID (FIDO2) -------------//
+// Required for FIDO2/U2F support
+#define CFG_TUD_HID                 1
+#define CFG_TUD_HID_RX_BUFSIZE      64
+#define CFG_TUD_HID_TX_BUFSIZE      64
 
 //------------- MSC (Optional for UF2) -------------//
 // Not needed for final firmware, but useful for development
 #define CFG_TUD_MSC                 0
 
-//------------- VENDOR (Not used, replaced by CCID) -------------//
-#define CFG_TUD_VENDOR              0
+//------------- VENDOR (WebUSB) -------------//
+// Used for WebUSB interface
+#define CFG_TUD_VENDOR              1
+#define CFG_TUD_VENDOR_RX_BUFSIZE   64
+#define CFG_TUD_VENDOR_TX_BUFSIZE   64
 
 //--------------------------------------------------------------------
 // USB DESCRIPTOR CONFIGURATION

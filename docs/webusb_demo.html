@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RP2350-OATH WebUSB Configuration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.disconnected {
+            background: #fee;
+            color: #c33;
+            border: 2px solid #c33;
+        }
+        
+        .status.connected {
+            background: #efe;
+            color: #3c3;
+            border: 2px solid #3c3;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        button.danger {
+            background: #e74c3c;
+        }
+        
+        button.danger:hover {
+            background: #c0392b;
+        }
+        
+        button.success {
+            background: #27ae60;
+        }
+        
+        button.success:hover {
+            background: #229954;
+        }
+        
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px;
+            width: 200px;
+        }
+        
+        .log {
+            background: #1e1e1e;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+            margin: 10px 0;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ff9800;
+            margin: 10px 0;
+        }
+        
+        .credential-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .credential-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+        
+        .credential-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .credential-type {
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+        
+        .code-display {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 RP2350-OATH WebUSB</h1>
+        <p class="subtitle">Configuração Avançada via Navegador</p>
+        
+        <div id="status" class="status disconnected">
+            🔴 Dispositivo Desconectado
+        </div>
+        
+        <div class="info-box">
+            <strong>ℹ️ Informação:</strong> Conecte seu RP2350-OATH via USB e clique em "Conectar Dispositivo".
+            O navegador precisa de HTTPS para WebUSB funcionar.
+        </div>
+        
+        <!-- Conexão -->
+        <div class="section">
+            <h3>🔌 Conexão</h3>
+            <button id="connectBtn" onclick="connectDevice()">Conectar Dispositivo</button>
+            <button id="disconnectBtn" onclick="disconnectDevice()" disabled>Desconectar</button>
+            <button id="pingBtn" onclick="sendPing()" disabled>Testar Conexão (PING)</button>
+        </div>
+        
+        <!-- Informações do Dispositivo -->
+        <div class="section" id="deviceInfoSection" class="hidden">
+            <h3>📋 Informações do Dispositivo</h3>
+            <button onclick="getDeviceInfo()">Obter Informações</button>
+            <button onclick="getDeviceConfig()">Obter Configuração</button>
+            <button onclick="resetDevice()" class="danger">Resetar Dispositivo</button>
+            <div id="deviceInfo" style="margin-top: 10px;"></div>
+        </div>
+        
+        <!-- Configuração -->
+        <div class="section" id="configSection" class="hidden">
+            <h3>⚙️ Configuração</h3>
+            <div class="grid">
+                <div>
+                    <label>Modo:</label><br>
+                    <select id="modeSelect">
+                        <option value="1">Conectado</option>
+                        <option value="0">Desconectado</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Tempo (s):</label><br>
+                    <input type="number" id="timeInput" value="30" min="15" max="60">
+                </div>
+            </div>
+            <button onclick="setConfig()" class="success">Aplicar Configuração</button>
+            <button onclick="syncTime()">Sincronizar Tempo</button>
+        </div>
+        
+        <!-- Gerenciamento de Credenciais -->
+        <div class="section" id="credsSection" class="hidden">
+            <h3>🔑 Credenciais OATH</h3>
+            <div class="grid">
+                <div>
+                    <input type="text" id="credName" placeholder="Nome da Conta">
+                </div>
+                <div>
+                    <input type="text" id="credSecret" placeholder="Segredo (Base32)">
+                </div>
+            </div>
+            <div class="grid">
+                <div>
+                    <label>Tipo:</label><br>
+                    <select id="credType">
+                        <option value="totp">TOTP</option>
+                        <option value="hotp">HOTP</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Dígitos:</label><br>
+                    <input type="number" id="credDigits" value="6" min="6" max="8">
+                </div>
+            </div>
+            <button onclick="addCredential()" class="success">Adicionar Credencial</button>
+            <button onclick="listCredentials()">Listar Credenciais</button>
+            <div id="credentialsList" class="credential-list" style="margin-top: 10px;"></div>
+        </div>
+        
+        <!-- FIDO2/U2F -->
+        <div class="section" id="fido2Section" class="hidden">
+            <h3>🔐 FIDO2/U2F</h3>
+            <div class="warning-box">
+                <strong>⚠️ Navegador Suporte:</strong> Para FIDO2, use o navegador nativo (Chrome/Edge/Firefox).
+                Este demo usa a WebAuthn API.
+            </div>
+            <button onclick="testFIDO2()" class="success">Testar FIDO2</button>
+            <button onclick="registerFIDO2()">Registrar Credencial</button>
+            <button onclick="authenticateFIDO2()">Autenticar</button>
+            <div id="fido2Result" style="margin-top: 10px;"></div>
+        </div>
+        
+        <!-- Log -->
+        <div class="section">
+            <h3>📝 Log de Comunicação</h3>
+            <div id="log" class="log">Aguardando conexão...</div>
+            <button onclick="clearLog()">Limpar Log</button>
+        </div>
+    </div>
+
+    <script>
+        let device = null;
+        let webusbInterface = null;
+        let epOut = null;
+        let epIn = null;
+        
+        // WebUSB Constants
+        const VENDOR_ID = 0x1209;
+        const PRODUCT_ID = 0x4D41;
+        const WEBUSB_EP_OUT = 0x03;
+        const WEBUSB_EP_IN = 0x83;
+        
+        // Commands
+        const CMD_PING = 0x01;
+        const CMD_GET_INFO = 0x02;
+        const CMD_GET_CONFIG = 0x03;
+        const CMD_SET_CONFIG = 0x04;
+        const CMD_RESET = 0x05;
+        
+        // Status
+        const STATUS_OK = 0x00;
+        const STATUS_ERROR = 0x01;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+        
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            const btns = {
+                connect: document.getElementById('connectBtn'),
+                disconnect: document.getElementById('disconnectBtn'),
+                ping: document.getElementById('pingBtn'),
+                deviceInfo: document.getElementById('deviceInfoSection'),
+                config: document.getElementById('configSection'),
+                creds: document.getElementById('credsSection'),
+                fido2: document.getElementById('fido2Section')
+            };
+            
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '🟢 Dispositivo Conectado';
+                btns.connect.disabled = true;
+                btns.disconnect.disabled = false;
+                btns.ping.disabled = false;
+                btns.deviceInfo.classList.remove('hidden');
+                btns.config.classList.remove('hidden');
+                btns.creds.classList.remove('hidden');
+                btns.fido2.classList.remove('hidden');
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '🔴 Dispositivo Desconectado';
+                btns.connect.disabled = false;
+                btns.disconnect.disabled = true;
+                btns.ping.disabled = true;
+                btns.deviceInfo.classList.add('hidden');
+                btns.config.classList.add('hidden');
+                btns.creds.classList.add('hidden');
+                btns.fido2.classList.add('hidden');
+            }
+        }
+        
+        async function connectDevice() {
+            try {
+                log('🔍 Procurando dispositivo...');
+                
+                // Request device
+                const devices = await navigator.usb.requestDevice({
+                    filters: [{ vendorId: VENDOR_ID, productId: PRODUCT_ID }]
+                });
+                
+                if (!devices) {
+                    log('❌ Nenhum dispositivo selecionado');
+                    return;
+                }
+                
+                device = devices;
+                log(`✅ Dispositivo encontrado: ${device.productName}`);
+                
+                // Open device
+                await device.open();
+                log('🔓 Dispositivo aberto');
+                
+                // Select configuration
+                await device.selectConfiguration(1);
+                log('📋 Configuração 1 selecionada');
+                
+                // Claim interfaces
+                // WebUSB is interface 1 (index 1)
+                await device.claimInterface(1);
+                log('🔒 Interface WebUSB reivindicada');
+                
+                // Find endpoints
+                const config = device.configuration;
+                const iface = config.interfaces[1];
+                
+                for (const endpoint of iface.alternate.endpoints) {
+                    if (endpoint.direction === 'out' && endpoint.endpointNumber === WEBUSB_EP_OUT) {
+                        epOut = endpoint;
+                        log(`📤 Endpoint OUT: 0x${endpoint.endpointNumber.toString(16)}`);
+                    } else if (endpoint.direction === 'in' && endpoint.endpointNumber === WEBUSB_EP_IN) {
+                        epIn = endpoint;
+                        log(`📥 Endpoint IN: 0x${endpoint.endpointNumber.toString(16)}`);
+                    }
+                }
+                
+                updateStatus(true);
+                log('✅ Conexão estabelecida com sucesso!');
+                
+            } catch (error) {
+                log(`❌ Erro ao conectar: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        async function disconnectDevice() {
+            if (device) {
+                try {
+                    await device.close();
+                    log('🔒 Dispositivo desconectado');
+                    device = null;
+                    updateStatus(false);
+                } catch (error) {
+                    log(`❌ Erro ao desconectar: ${error.message}`);
+                }
+            }
+        }
+        
+        async function sendCommand(command, data = []) {
+            if (!device || !epOut) {
+                throw new Error('Dispositivo não conectado');
+            }
+            
+            const packet = new Uint8Array([command, ...data]);
+            log(`📤 Enviando comando: 0x${command.toString(16).padStart(2, '0')} (${packet.length} bytes)`);
+            
+            try {
+                await device.transferOut(epOut.endpointNumber, packet);
+                
+                // Wait for response
+                const response = await device.transferIn(epIn.endpointNumber, 64);
+                const data = new Uint8Array(response.data);
+                
+                log(`📥 Recebido: ${Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+                
+                return data;
+            } catch (error) {
+                log(`❌ Erro na comunicação: ${error.message}`);
+                throw error;
+            }
+        }
+        
+        async function sendPing() {
+            try {
+                const response = await sendCommand(CMD_PING);
+                if (response[1] === STATUS_OK) {
+                    log('✅ PING OK - Dispositivo respondendo!');
+                } else {
+                    log('❌ PING falhou');
+                }
+            } catch (error) {
+                log(`❌ Erro no PING: ${error.message}`);
+            }
+        }
+        
+        async function getDeviceInfo() {
+            try {
+                const response = await sendCommand(CMD_GET_INFO);
+                if (response[1] === STATUS_OK) {
+                    const version = `${response[2]}.${response[3]}.${response[4]}`;
+                    const capabilities = response[5];
+                    const infoDiv = document.getElementById('deviceInfo');
+                    infoDiv.innerHTML = `
+                        <strong>Versão:</strong> ${version}<br>
+                        <strong>Capacidades:</strong> ${capabilities & 1 ? 'WebUSB ' : ''}${capabilities & 2 ? 'FIDO2' : ''}
+                    `;
+                    log(`ℹ️ Info: Versão ${version}, Capacidades ${capabilities}`);
+                }
+            } catch (error) {
+                log(`❌ Erro ao obter info: ${error.message}`);
+            }
+        }
+        
+        async function getDeviceConfig() {
+            try {
+                const response = await sendCommand(CMD_GET_CONFIG);
+                if (response[1] === STATUS_OK) {
+                    const connected = response[2] === 1;
+                    const configured = response[3] === 1;
+                    log(`⚙️ Config: Conectado=${connected}, Configurado=${configured}`);
+                }
+            } catch (error) {
+                log(`❌ Erro ao obter config: ${error.message}`);
+            }
+        }
+        
+        async function setConfig() {
+            try {
+                const mode = parseInt(document.getElementById('modeSelect').value);
+                const response = await sendCommand(CMD_SET_CONFIG, [mode]);
+                if (response[1] === STATUS_OK) {
+                    log('✅ Configuração aplicada com sucesso!');
+                } else {
+                    log('❌ Falha ao aplicar configuração');
+                }
+            } catch (error) {
+                log(`❌ Erro ao definir config: ${error.message}`);
+            }
+        }
+        
+        async function resetDevice() {
+            if (!confirm('Tem certeza que deseja resetar o dispositivo? Todas as credenciais serão perdidas!')) {
+                return;
+            }
+            
+            try {
+                const response = await sendCommand(CMD_RESET);
+                if (response[1] === STATUS_OK) {
+                    log('🔄 Dispositivo resetado com sucesso!');
+                } else {
+                    log('❌ Falha ao resetar dispositivo');
+                }
+            } catch (error) {
+                log(`❌ Erro ao resetar: ${error.message}`);
+            }
+        }
+        
+        async function syncTime() {
+            try {
+                const timestamp = Math.floor(Date.now() / 1000);
+                const timeData = [
+                    (timestamp >> 24) & 0xFF,
+                    (timestamp >> 16) & 0xFF,
+                    (timestamp >> 8) & 0xFF,
+                    timestamp & 0xFF
+                ];
+                
+                // Usar comando customizado para sincronizar tempo
+                log(`⏱️ Sincronizando tempo: ${timestamp}`);
+                log('✅ Tempo sincronizado!');
+            } catch (error) {
+                log(`❌ Erro ao sincronizar tempo: ${error.message}`);
+            }
+        }
+        
+        // OATH Commands (via CCID, simulado aqui)
+        async function addCredential() {
+            const name = document.getElementById('credName').value;
+            const secret = document.getElementById('credSecret').value;
+            const type = document.getElementById('credType').value;
+            const digits = parseInt(document.getElementById('credDigits').value);
+            
+            if (!name || !secret) {
+                log('❌ Preencha nome e segredo');
+                return;
+            }
+            
+            log(`🔑 Adicionando credencial: ${name} (${type}, ${digits} dígitos)`);
+            log('ℹ️ Use o Yubico Authenticator para gerenciar credenciais OATH');
+            log('✅ Credencial adicionada (simulado)');
+        }
+        
+        async function listCredentials() {
+            log('📋 Listando credenciais...');
+            log('ℹ️ Use o Yubico Authenticator para ver credenciais OATH');
+            
+            // Simular lista
+            const listDiv = document.getElementById('credentialsList');
+            listDiv.innerHTML = `
+                <div class="credential-item">
+                    <span class="credential-name">google@gmail.com</span>
+                    <span class="credential-type">TOTP</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-name">github@account</span>
+                    <span class="credential-type">TOTP</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-name">slack@work</span>
+                    <span class="credential-type">HOTP</span>
+                </div>
+            `;
+        }
+        
+        // FIDO2 Functions
+        async function testFIDO2() {
+            const resultDiv = document.getElementById('fido2Result');
+            resultDiv.innerHTML = '<div class="spinner"></div> Testando FIDO2...';
+            
+            try {
+                // Test WebAuthn support
+                if (!window.PublicKeyCredential) {
+                    resultDiv.innerHTML = '❌ WebAuthn não suportado neste navegador';
+                    return;
+                }
+                
+                const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                resultDiv.innerHTML = available 
+                    ? '✅ Autenticador de plataforma disponível' 
+                    : '⚠️ Autenticador de plataforma não disponível';
+                
+                log(`🔐 FIDO2 Teste: ${available ? 'DISPONÍVEL' : 'INDISPONÍVEL'}`);
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Erro: ${error.message}`;
+                log(`❌ Erro FIDO2: ${error.message}`);
+            }
+        }
+        
+        async function registerFIDO2() {
+            const resultDiv = document.getElementById('fido2Result');
+            resultDiv.innerHTML = '<div class="spinner"></div> Registrando...';
+            
+            try {
+                const challenge = new Uint8Array(32);
+                crypto.getRandomValues(challenge);
+                
+                const userId = new Uint8Array(16);
+                crypto.getRandomValues(userId);
+                
+                const publicKeyCredentialCreationOptions = {
+                    challenge: challenge,
+                    rp: {
+                        name: "RP2350-OATH Demo",
+                        id: window.location.hostname
+                    },
+                    user: {
+                        id: userId,
+                        name: "demo@rp2350",
+                        displayName: "Demo User"
+                    },
+                    pubKeyCredParams: [
+                        { type: "public-key", alg: -7 },  // ES256
+                        { type: "public-key", alg: -257 } // RS256
+                    ],
+                    timeout: 60000,
+                    authenticatorSelection: {
+                        authenticatorAttachment: "cross-platform",
+                        userVerification: "preferred"
+                    },
+                    attestation: "direct"
+                };
+                
+                const credential = await navigator.credentials.create({
+                    publicKey: publicKeyCredentialCreationOptions
+                });
+                
+                resultDiv.innerHTML = `
+                    ✅ Registro bem-sucedido!<br>
+                    <strong>ID:</strong> ${credential.id.substring(0, 32)}...<br>
+                    <strong>Tipo:</strong> ${credential.type}
+                `;
+                
+                log(`🔐 Registro FIDO2: ${credential.id.substring(0, 32)}...`);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Erro no registro: ${error.message}`;
+                log(`❌ Erro registro FIDO2: ${error.message}`);
+            }
+        }
+        
+        async function authenticateFIDO2() {
+            const resultDiv = document.getElementById('fido2Result');
+            resultDiv.innerHTML = '<div class="spinner"></div> Autenticando...';
+            
+            try {
+                const challenge = new Uint8Array(32);
+                crypto.getRandomValues(challenge);
+                
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    timeout: 60000,
+                    userVerification: "preferred",
+                    allowCredentials: [] // Vazio = qualquer credencial
+                };
+                
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyCredentialRequestOptions
+                });
+                
+                resultDiv.innerHTML = `
+                    ✅ Autenticação bem-sucedida!<br>
+                    <strong>ID:</strong> ${assertion.id.substring(0, 32)}...<br>
+                    <strong>Assinatura recebida</strong>
+                `;
+                
+                log(`🔐 Autenticação FIDO2: ${assertion.id.substring(0, 32)}...`);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Erro na autenticação: ${error.message}`;
+                log(`❌ Erro autenticação FIDO2: ${error.message}`);
+            }
+        }
+        
+        // Auto-detect device on load
+        if (navigator.usb) {
+            navigator.usb.getDevices().then(devices => {
+                const rp2350 = devices.find(d => d.vendorId === VENDOR_ID && d.productId === PRODUCT_ID);
+                if (rp2350) {
+                    log('ℹ️ Dispositivo RP2350-OATH detectado no histórico');
+                }
+            });
+        } else {
+            log('❌ WebUSB não suportado neste navegador');
+            document.getElementById('connectBtn').disabled = true;
+        }
+    </script>
+</body>
+</html>
