@@ -207,7 +207,7 @@ static void handle_list_command(uint8_t *apdu_out, uint16_t *len_out) {
 // Handler for CALCULATE Command (0x04 for TRUNCATED Response)
 // Data: [0x71, name_len, name, 0x74, 8, challenge...]
 static void handle_calculate_command(uint8_t *data, uint16_t len,
-                                     uint8_t *apdu_out, uint16_t *len_out) {
+                                      uint8_t *apdu_out, uint16_t *len_out) {
   // Parse Name
   uint16_t offset = 0;
   if (data[offset++] != 0x71) {
@@ -221,7 +221,7 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
     name_len = OATH_MAX_NAME_LEN - 1;
   memcpy(name, &data[offset], name_len);
   name[name_len] = '\0';
-  offset += (data[offset - 1]);
+  offset += name_len;
 
   // Parse Challenge (for HOTP/TOTP often time is passed or implicit)
   // If Challenge present (Tag 0x74), use it. Else use internal time (for TOTP).
@@ -248,15 +248,6 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
     return;
   }
 
-  // Check Password Access (if strict: CALC usually allowed without password for
-  // TOTP? Yubico Spec: "Calculate does not require authentication unless
-  // 'require_touch' is set?" actually standard says "Access Code" protects
-  // PUT/DEL. However, "Require Touch" protects CALC. We will enforce Password
-  // for CALC if configured? No, standard usually doesn't. We only enforce
-  // password for PUT/DEL/LIST. EXCEPT if we want a "Password Protected
-  // Credential". For now, let's skip Password check for CALC to follow common
-  // usage, only enforce TOUCH if required.
-
   // Check Touch Requirement
   if (cred.touch_required) {
     if (!do_touch_check()) {
@@ -276,10 +267,15 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
   char *otp_string = NULL;
 
   if (cred.type == OATH_TYPE_TOTP) {
-    // If no challenge provided, use system time (placeholder)
+    // If no challenge provided, use system time
     if (!has_challenge) {
-      // TODO: Get real time. For now hardcode or use relative.
-      timestamp = 1000000000;
+      // Try to get time from time sync
+      timestamp = time_sync_get_timestamp();
+      if (timestamp == 0) {
+        // Fallback to relative time
+        static uint64_t fallback_time = 1000000000;
+        timestamp = fallback_time++;
+      }
     }
 
     // Map Algo
@@ -307,8 +303,8 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
 
     long counter = cred.counter;
     if (has_challenge) {
-      // For HOTP, Challenge is usually ignored or used as counter override?
-      // Strict HOTP uses internal counter.
+      // For HOTP, Challenge can override counter
+      counter = (long)timestamp;
     }
 
     otp_string = get_hotp(base32_secret, counter, cred.digits, sha_algo, &err);
@@ -337,7 +333,7 @@ static void handle_calculate_command(uint8_t *data, uint16_t len,
 
 // Handler for SET CODE (0x03)
 static void handle_set_code(uint8_t *data, uint16_t len, uint8_t *apdu_out,
-                            uint16_t *len_out) {
+                             uint16_t *len_out) {
   // Format: Key + Challenge (New Password)
   // Actually Yk: 0x03 | Key + 8 byte challenge (derivation/salt?)
   // Simplification: Data IS the new password
@@ -347,6 +343,29 @@ static void handle_set_code(uint8_t *data, uint16_t len, uint8_t *apdu_out,
   } else {
     send_sw(SW_MEMORY_FAILURE, apdu_out, len_out);
   }
+}
+
+// Handler for TIME SYNC (Custom command 0x05)
+static void handle_time_sync(uint8_t *data, uint16_t len, uint8_t *apdu_out,
+                             uint16_t *len_out) {
+  // Data: 8 bytes Unix timestamp (big-endian)
+  if (len < 8) {
+    send_sw(SW_WRONG_LENGTH, apdu_out, len_out);
+    return;
+  }
+  
+  uint64_t timestamp = 0;
+  for (int i = 0; i < 8; i++) {
+    timestamp = (timestamp << 8) | data[i];
+  }
+  
+  time_sync_set_timestamp(timestamp);
+  
+  // Response: 1 byte status (0x01 = success)
+  apdu_out[0] = 0x01;
+  *len_out = 1;
+  send_sw(SW_OK, apdu_out + 1, len_out);
+  *len_out += 1;
 }
 
 // Handler for VALIDATE (0xA3)
@@ -461,9 +480,14 @@ void oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in, uint8_t *apdu_out,
 
   case 0x01: // PUT
   case 0x02: // DELETE
-  case 0x04: // RESET
+  case 0x03: // SET CODE
+  case 0x04: // RESET or TIME SYNC (custom)
   case 0xA1: // CALC or LIST
     handle_oath_command(apdu_in, len_in, apdu_out, len_out);
+    break;
+
+  case 0x05: // TIME SYNC (custom command)
+    handle_time_sync(apdu_in + APDU_DATA_POS, apdu_in[APDU_LC_POS], apdu_out, len_out);
     break;
 
   default:

@@ -17,6 +17,9 @@ add_executable(secure_app
     src/oath/oath_protocol.c
     src/oath/oath_storage.c
     src/security/security.c
+    src/time_sync.c
+    src/hid_keyboard.c
+    src/crypto/aes_gcm.c
     # src/crypto/hmac.c - Removed, using libcotp/mbedtls
     # src/main_s.c - Merged into main_secure.c
     # libcotp sources
