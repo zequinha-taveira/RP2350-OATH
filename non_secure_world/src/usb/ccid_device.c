@@ -23,8 +23,9 @@ typedef struct {
 
 static ccid_state_t ccid_state = {
     .is_card_present = true, // Always present for emulated token
-    .atr = {0x3B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00},
+    // ATR for YubiKey 5: 3B F8 13 00 00 81 31 FE 15 59 75 62 69 4B 65 79 34 D4
+    .atr = {0x3B, 0xF8, 0x13, 0x00, 0x00, 0x81, 0x31, 0xFE, 0x15, 0x59, 0x75,
+            0x62, 0x69, 0x4B, 0x65, 0x79, 0x34, 0xD4},
     .ep_out = 0,
     .ep_in = 0};
 
@@ -228,6 +229,58 @@ void ccid_message_handler(uint8_t const *msg, uint32_t len) {
                                           .bError = 0,
                                           .bSpecific = 0};
     tud_ccid_tx(rhport, (uint8_t const *)&status_resp, sizeof(status_resp));
+    break;
+  }
+
+  case PC_TO_RDR_GETPARAMETERS: {
+    // Return default parameters for T=1 protocol
+    uint8_t params[] = {
+        0x01, // Protocol T=1
+        0x11, // bmFindexDindex
+        0x10, // bmTCCKST1 (Checksum CRC, Conv Direct)
+        0x10, // bGuardTimeT1
+        0x4D, // bWaitingIntegerT1
+        0x20, // bClockStop
+        0xFE  // bIFSC
+    };
+    rdr_to_pc_datablock_t param_resp = {.bMessageType = RDR_TO_PC_PARAMETERS,
+                                        .dwLength = sizeof(params),
+                                        .bSlot = header->bSlot,
+                                        .bSeq = header->bSeq,
+                                        .bStatus = SLOT_STATUS_ICC_PRESENT,
+                                        .bError = 0,
+                                        .bChainParameter = 0};
+    memcpy(param_resp.abData, params, sizeof(params));
+    tud_ccid_tx(rhport, (uint8_t const *)&param_resp,
+                sizeof(ccid_msg_header_t) + 3 + sizeof(params));
+    break;
+  }
+
+  case PC_TO_RDR_SETPARAMETERS: {
+    // Just acknowledge parameters
+    rdr_to_pc_datablock_t set_resp = {.bMessageType = RDR_TO_PC_PARAMETERS,
+                                      .dwLength = 0,
+                                      .bSlot = header->bSlot,
+                                      .bSeq = header->bSeq,
+                                      .bStatus = SLOT_STATUS_ICC_PRESENT,
+                                      .bError = 0,
+                                      .bChainParameter = 0};
+    tud_ccid_tx(rhport, (uint8_t const *)&set_resp,
+                sizeof(ccid_msg_header_t) + 3);
+    break;
+  }
+
+  case PC_TO_RDR_RESETPARAMETERS: {
+    // Acknowledge reset
+    rdr_to_pc_datablock_t reset_resp = {.bMessageType = RDR_TO_PC_PARAMETERS,
+                                        .dwLength = 0,
+                                        .bSlot = header->bSlot,
+                                        .bSeq = header->bSeq,
+                                        .bStatus = SLOT_STATUS_ICC_PRESENT,
+                                        .bError = 0,
+                                        .bChainParameter = 0};
+    tud_ccid_tx(rhport, (uint8_t const *)&reset_resp,
+                sizeof(ccid_msg_header_t) + 3);
     break;
   }
 

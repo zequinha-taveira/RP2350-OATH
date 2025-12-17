@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 //--------------------------------------------------------------------+
 // CCID Constants
 //--------------------------------------------------------------------+
@@ -14,11 +13,15 @@
 #define PC_TO_RDR_XFRBLOCK 0x6F
 #define PC_TO_RDR_ICCPOWEROFF 0x63
 #define PC_TO_RDR_GETSLOTSTATUS 0x65
+#define PC_TO_RDR_GETPARAMETERS 0x6C
+#define PC_TO_RDR_SETPARAMETERS 0x61
+#define PC_TO_RDR_RESETPARAMETERS 0x6D
 
 // Message Types (Reader to PC)
 #define RDR_TO_PC_DATABLOCK 0x80
 #define RDR_TO_PC_SLOTSTATUS 0x81
-#define RDR_TO_PC_ICCSTATUS 0x82 // Not used in this simple implementation
+#define RDR_TO_PC_PARAMETERS 0x82
+#define RDR_TO_PC_ESCAPE 0x83
 
 // Slot Status
 #define SLOT_STATUS_ICC_PRESENT 0x00

@@ -132,6 +132,7 @@ Consulte o guia **[SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md)*
 - **[PROTOCOL.md](docs/PROTOCOL.md)**: Detalhes sobre o protocolo YKOATH implementado.
 - **[API.md](docs/API.md)**: Referência da API interna do firmware.
 - **[WEBUSB_FIDO2_IMPLEMENTATION.md](docs/WEBUSB_FIDO2_IMPLEMENTATION.md)**: Especificações técnicas das novas funcionalidades.
+- **[CCID_IMPLEMENTATION.md](docs/CCID_IMPLEMENTATION.md)**: Technical overview of the CCID Smart Card emulation.
 - **[ADVANCED_IMPLEMENTATION_COMPLETE.md](docs/ADVANCED_IMPLEMENTATION_COMPLETE.md)**: Documentação completa da Fase 3.
 
 ## 🗺️ Roadmap (Revisado)
