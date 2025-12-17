@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 #define MAX_CREDENTIALS 16
 #define OATH_MAX_NAME_LEN 64
 #define OATH_MAX_SECRET_LEN 64 // Binary secret length (supports SHA512)
@@ -24,8 +23,9 @@ typedef struct {
   oath_type_t type;
   oath_algo_t algorithm;
   uint8_t digits;
-  uint32_t counter; // For HOTP
-  uint32_t period;  // For TOTP (default 30)
+  uint32_t counter;       // For HOTP
+  uint32_t period;        // For TOTP (default 30)
+  uint8_t touch_required; // 0x01 if touch required
 } oath_credential_t;
 
 // Initialize OATH storage
@@ -34,7 +34,7 @@ void oath_storage_init(void);
 // Save a new credential
 bool oath_storage_put(const char *name, const uint8_t *secret,
                       uint8_t secret_len, oath_type_t type, oath_algo_t algo,
-                      uint8_t digits, uint32_t period);
+                      uint8_t digits, uint32_t period, uint8_t touch_required);
 
 // Delete a credential by name
 bool oath_storage_delete(const char *name);
@@ -50,5 +50,14 @@ void oath_storage_reset(void);
 
 // Update counter (for HOTP)
 bool oath_storage_update_counter(const char *name, uint32_t new_counter);
+
+// Set Access Code (Password) - stores hash
+bool oath_storage_set_password(const uint8_t *code, uint8_t len);
+
+// Verify Access Code
+bool oath_storage_verify_password(const uint8_t *code, uint8_t len);
+
+// Check if any password is currently set
+bool oath_storage_is_password_set(void);
 
 #endif // OATH_STORAGE_H

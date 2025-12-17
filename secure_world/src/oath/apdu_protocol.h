@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 //--------------------------------------------------------------------+
 // ISO 7816-4 APDU Constants
 //--------------------------------------------------------------------+
@@ -23,6 +22,7 @@
 #define SW_WRONG_LENGTH 0x6700
 #define SW_WRONG_DATA 0x6A80 // Added for invalid data parameter
 #define SW_SECURITY_STATUS_NOT_SAT 0x6982
+#define SW_CONDITIONS_NOT_SATISFIED 0x6985 // Conditions of use not satisfied
 #define SW_INS_NOT_SUPPORTED 0x6D00
 #define SW_CLA_NOT_SUPPORTED 0x6E00
 #define SW_MEMORY_FAILURE 0x6581 // Added for memory write failure

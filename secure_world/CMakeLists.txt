@@ -6,6 +6,9 @@ project(secure_app C CXX ASM)
 # Initialize the SDK
 pico_sdk_init()
 
+# Generate PIO header
+pico_generate_pio_header(${CMAKE_CURRENT_LIST_DIR}/src/drivers/ws2812.pio)
+
 # Define the target executable
 add_executable(secure_app
     main_secure.c
