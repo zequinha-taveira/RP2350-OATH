@@ -418,7 +418,7 @@ Este documento detalha o plano abrangente de testes de compatibilidade para gara
 # Testes de Protocolo
 - [ ] Wireshark (USB capture)
 - [ ] USBlyzer
-- [ ] Yubikey Manager (ykman)
+- [ ] Yubikey Manager (ykman) - included in `tools/yubikey-manager`
 
 # Testes de Segurança
 - [ ] OWASP ZAP
