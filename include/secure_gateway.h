@@ -16,8 +16,15 @@ typedef enum {
   SG_HSM_GEN_KEY = 0x10,
   SG_HSM_GET_PUBKEY = 0x11,
   SG_HSM_SIGN = 0x12,
-  // Add more functions as needed
 } secure_gateway_func_id_t;
+
+// Secure Gateway error codes
+#define SG_SUCCESS 0
+#define SG_ERR_SECURITY -100
+#define SG_ERR_INVALID_PARAM -1
+#define SG_ERR_UNKNOWN_FUNC -2
+#define SG_ERR_BUFFER_TOO_SMALL -3
+#define SG_ERR_TOUCH_REQUIRED -4 // Special case for non-blocking touch
 
 /**
  * @brief Initializes the Secure World environment.

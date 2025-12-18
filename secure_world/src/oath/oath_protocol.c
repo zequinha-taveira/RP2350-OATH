@@ -6,6 +6,9 @@
 #include "time_sync.h"
 #include <hardware/gpio.h>
 #include <pico/stdlib.h>
+#include <pico/time.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +20,6 @@
 
 // Global state
 static bool session_unlocked = false;
-static uint32_t last_touch_ack_ms = 0;
 
 // Hardware configuration
 #define TOUCH_BUTTON_PIN 21
@@ -32,29 +34,26 @@ static void send_sw(uint16_t sw, uint8_t *apdu_out, uint16_t *len_out) {
   *len_out = 2;
 }
 
-static bool do_touch_check(void) {
-  printf("[OATH] User Presence Test (UPT) required. Waiting for touch...\n");
-
-  // Simulation of User Presence verification (Button GP21)
-  // In a production device, this would be integrated into the main loop
-  // to keep the USB stack alive. Here we use a limited loop.
-  for (int i = 0; i < 100; i++) {
-    led_set_color(0, 0, 255); // Pulsing Blue
-    sleep_ms(25);
-    led_set_color(0, 0, 0);
-    sleep_ms(25);
-
-    if (!gpio_get(TOUCH_BUTTON_PIN)) {
-      printf("[OATH] User Presence Confirmed.\n");
-      led_set_color(0, 255, 0); // Success Green
-      sleep_ms(100);
-      return true;
-    }
+static bool check_touch(void) {
+  if (!gpio_get(TOUCH_BUTTON_PIN)) {
+    printf("[OATH] User Presence Confirmed.\n");
+    led_set_color(0, 255, 0); // Success Green
+    return true;
   }
 
-  printf("[OATH] UPT Timeout. Request denied.\n");
-  led_set_color(255, 0, 0); // Failure Red
-  sleep_ms(200);
+  // Visual feedback for waiting
+  static uint32_t last_blink = 0;
+  uint32_t now = (uint32_t)(time_us_64() / 1000);
+  if (now - last_blink > 500) {
+    static bool toggle = false;
+    toggle = !toggle;
+    if (toggle)
+      led_set_color(0, 0, 255); // Pulsing Blue
+    else
+      led_set_color(0, 0, 0);
+    last_blink = now;
+  }
+
   return false;
 }
 
@@ -64,7 +63,6 @@ static bool do_touch_check(void) {
 
 static void handle_select(uint8_t *apdu_out, uint16_t *len_out) {
   // Response for OATH SELECT: Tag 0x79 (Version)
-  // Ensure we don't overflow (need at least 7 bytes)
   apdu_out[0] = 0x79;
   apdu_out[1] = 0x03;
   apdu_out[2] = 0x05; // v5.4.3
@@ -72,7 +70,7 @@ static void handle_select(uint8_t *apdu_out, uint16_t *len_out) {
   apdu_out[4] = 0x03;
   *len_out = 5;
   send_sw(SW_OK, apdu_out + 5, len_out);
-  *len_out = 7; // Fixed length for this simple response
+  *len_out = 7;
 }
 
 static void handle_put(uint8_t *data, uint16_t len, uint8_t *apdu_out,
@@ -88,8 +86,6 @@ static void handle_put(uint8_t *data, uint16_t len, uint8_t *apdu_out,
   }
 
   uint16_t offset = 0;
-
-  // Parse Name (0x71)
   offset++;
   uint8_t name_len = data[offset++];
   if (offset + name_len > len) {
@@ -104,7 +100,6 @@ static void handle_put(uint8_t *data, uint16_t len, uint8_t *apdu_out,
   name[copy_len] = '\0';
   offset += name_len;
 
-  // Parse Key (0x73)
   if (offset + 2 > len || data[offset++] != 0x73) {
     send_sw(SW_WRONG_DATA, apdu_out, len_out);
     return;
@@ -157,12 +152,12 @@ static void handle_calculate(uint8_t *data, uint16_t len, uint8_t *apdu_out,
     return;
   }
 
-  if (cred.touch_required && !do_touch_check()) {
+  if (cred.touch_required && !check_touch()) {
+    printf("[OATH] User Presence REQUIRED for %s\n", name);
     send_sw(SW_CONDITIONS_NOT_SATISFIED, apdu_out, len_out);
     return;
   }
 
-  // Logic for generating OTP
   cotp_error_t err;
   char *base32_s = base32_encode(cred.secret, cred.secret_len, &err);
   if (!base32_s) {
@@ -183,9 +178,7 @@ static void handle_calculate(uint8_t *data, uint16_t len, uint8_t *apdu_out,
 
   if (otp) {
     size_t o_len = strlen(otp);
-    // Safety check: ensure we don't overflow. Max response buffer is usually
-    // handled at the gateway, but we check here for defense-in-depth.
-    if (o_len > 16) { // TOTP/HOTP codes are normally 6-8 digits
+    if (o_len > 16) {
       free(otp);
       send_sw(SW_UNKNOWN, apdu_out, len_out);
       return;
@@ -223,7 +216,6 @@ void oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in, uint8_t *apdu_out,
   }
 
   uint8_t ins = apdu_in[APDU_INS_POS];
-  uint8_t p1 = apdu_in[APDU_P1_POS];
   uint8_t *data = &apdu_in[APDU_DATA_POS];
   uint16_t data_len = (len_in > 4) ? apdu_in[APDU_LC_POS] : 0;
 

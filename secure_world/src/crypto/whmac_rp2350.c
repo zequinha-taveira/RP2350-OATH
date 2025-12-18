@@ -2,19 +2,20 @@
 #include "sha1.h"
 #include "sha256.h"
 #include "whmac.h"
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Defined in cotp.h
-// #define SHA1 0
-// #define SHA256 1
-// #define SHA512 2
+// Max number of simultaneous HMAC handles in secure world
+#define MAX_WHMAC_HANDLES 4
 
 struct whmac_handle_s {
   int algo;
   size_t dlen;
   size_t blklen;
+  bool in_use;
 
   // Union of contexts
   union {
@@ -26,6 +27,8 @@ struct whmac_handle_s {
   uint8_t k_opad[128]; // Max block size
 };
 
+static whmac_handle_t handle_pool[MAX_WHMAC_HANDLES];
+
 int whmac_check(void) {
   return 0; // Success
 }
@@ -35,29 +38,38 @@ whmac_handle_t *whmac_gethandle(int algo) {
     return NULL; // SHA512 not supported
   }
 
-  whmac_handle_t *hd = calloc(1, sizeof(whmac_handle_t));
-  if (!hd)
-    return NULL;
-
-  hd->algo = algo;
-  if (algo == SHA1) {
-    hd->dlen = 20;
-    hd->blklen = 64;
-  } else {
-    hd->dlen = 32;
-    hd->blklen = 64;
+  for (int i = 0; i < MAX_WHMAC_HANDLES; i++) {
+    if (!handle_pool[i].in_use) {
+      whmac_handle_t *hd = &handle_pool[i];
+      memset(hd, 0, sizeof(whmac_handle_t));
+      hd->in_use = true;
+      hd->algo = algo;
+      if (algo == SHA1) {
+        hd->dlen = 20;
+        hd->blklen = 64;
+      } else {
+        hd->dlen = 32;
+        hd->blklen = 64;
+      }
+      return hd;
+    }
   }
-  return hd;
+
+  return NULL; // No free handles
 }
 
 void whmac_freehandle(whmac_handle_t *hd) {
-  if (hd)
-    free(hd);
+  if (hd) {
+    memset(hd, 0, sizeof(whmac_handle_t));
+    hd->in_use = false;
+  }
 }
 
 size_t whmac_getlen(whmac_handle_t *hd) { return hd->dlen; }
 
 int whmac_setkey(whmac_handle_t *hd, const unsigned char *key, size_t keylen) {
+  if (!hd)
+    return -1;
   uint8_t k[128]; // Working key buffer
   memset(k, 0, sizeof(k));
 
@@ -108,6 +120,8 @@ int whmac_setkey(whmac_handle_t *hd, const unsigned char *key, size_t keylen) {
 
 void whmac_update(whmac_handle_t *hd, const unsigned char *buffer,
                   size_t buflen) {
+  if (!hd)
+    return;
   if (hd->algo == SHA1) {
     SHA1Update(&hd->ctx.sha1, buffer, (uint32_t)buflen);
   } else {
@@ -117,7 +131,7 @@ void whmac_update(whmac_handle_t *hd, const unsigned char *buffer,
 
 ssize_t whmac_finalize(whmac_handle_t *hd, unsigned char *buffer,
                        size_t buflen) {
-  if (buflen < hd->dlen)
+  if (!hd || buflen < hd->dlen)
     return -1;
 
   uint8_t inner_hash[64]; // Max digest size

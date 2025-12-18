@@ -1,35 +1,32 @@
 #include "secure_gateway.h"
-#include "secure_functions.h"
-#include "secure_gateway.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-// Secure World Handler from secure_functions.h
 extern int32_t secure_world_handler(secure_gateway_func_id_t func_id,
                                     uint8_t *in_data, uint16_t in_len,
                                     uint8_t *out_data, uint16_t out_max_len);
 
-//--------------------------------------------------------------------+
-// Secure Gateway Implementation (Non-Secure World Side)
-//--------------------------------------------------------------------+
-
 void secure_gateway_init(void) {
-  printf("NS-Gateway: Initializing Secure World...\n");
+  printf("[GATEWAY] Initializing Secure World Connection...\n");
   secure_world_handler(SG_INIT, NULL, 0, NULL, 0);
-  printf("NS-Gateway: Secure World initialization complete.\n");
 }
 
 bool secure_gateway_oath_handle_apdu(uint8_t *apdu_in, uint16_t len_in,
                                      uint8_t *apdu_out, uint16_t *len_out) {
-  // Max APDU response size is usually 256 + SW
   int32_t result = secure_world_handler(SG_OATH_HANDLE_APDU, apdu_in, len_in,
                                         apdu_out, 1024);
-  if (result < 0)
-    return false;
-  *len_out = (uint16_t)result;
-  return true;
+  if (result >= 0) {
+    if (len_out)
+      *len_out = (uint16_t)result;
+    return true;
+  }
+
+  if (result == SG_ERR_SECURITY) {
+    printf("[GATEWAY] Security Violation Alert!\n");
+  }
+  return false;
 }
 
 bool secure_gateway_hsm_gen_key(uint8_t slot, uint8_t *status) {
