@@ -6,6 +6,11 @@ include(pico_sdk_import.cmake)
 
 project(rp2350_oath_trustzone C CXX ASM)
 
+# Set platform and board
+set(PICO_PLATFORM rp2350 CACHE STRING "PICO PLATFORM")
+set(PICO_BOARD tenstar_rp2350_usb CACHE STRING "PICO BOARD")
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR} CACHE STRING "PICO BOARD HEADER DIRS")
+
 # Initialize the SDK
 pico_sdk_init()
 

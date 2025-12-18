@@ -13,10 +13,10 @@
 
 MEMORY
 {
-    /* Non-Secure Flash: Approx 2MB - 256KB = 1792KB (assuming 2MB total flash)
+    /* Non-Secure Flash: Approx 16MB - 256KB = 16128KB
      * Adjust LENGTH based on actual attached Flash size.
      */
-    FLASH(rx) : ORIGIN = 0x10040000, LENGTH = 2048k - 256k
+    FLASH(rx) : ORIGIN = 0x10040000, LENGTH = 16384k - 256k
     
     /* Non-Secure RAM: Approx 520KB - 128KB = 392KB (assuming 520KB total RAM on RP2350)
      * Check datasheet for exact RAM size (RP2350 has 520KB SRAM).
