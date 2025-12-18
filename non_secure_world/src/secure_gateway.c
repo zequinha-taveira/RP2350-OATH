@@ -71,3 +71,44 @@ bool secure_gateway_hsm_sign(uint8_t slot, const uint8_t *hash, uint8_t *sig,
   memcpy(sig, out_data + 1, *sig_len);
   return true;
 }
+
+bool secure_gateway_get_config(uint16_t *vid, uint16_t *pid) {
+  uint8_t out_data[4];
+  int32_t result = secure_world_handler(SG_GET_CONFIG, NULL, 0, out_data, 4);
+  if (result == 4) {
+    if (vid)
+      *vid = (uint16_t)(out_data[0] | (out_data[1] << 8));
+    if (pid)
+      *pid = (uint16_t)(out_data[2] | (out_data[3] << 8));
+    return true;
+  }
+  return false;
+}
+
+bool secure_gateway_fido2_handle_msg(const uint8_t *msg_in, uint16_t len_in,
+                                     uint8_t *msg_out, uint16_t *len_out) {
+  int32_t result = secure_world_handler(SG_FIDO2_HANDLE_MSG, (uint8_t *)msg_in,
+                                        len_in, msg_out, 1024);
+  if (result >= 0) {
+    if (len_out)
+      *len_out = (uint16_t)result;
+    return true;
+  }
+  return false;
+}
+
+bool secure_gateway_oath_backup(uint8_t *out_buf, uint16_t *out_len) {
+  int32_t result =
+      secure_world_handler(SG_OATH_BACKUP, NULL, 0, out_buf, *out_len);
+  if (result >= 0) {
+    *out_len = (uint16_t)result;
+    return true;
+  }
+  return false;
+}
+
+bool secure_gateway_oath_restore(const uint8_t *in_buf, uint16_t in_len) {
+  int32_t result =
+      secure_world_handler(SG_OATH_RESTORE, (uint8_t *)in_buf, in_len, NULL, 0);
+  return (result == SG_SUCCESS);
+}

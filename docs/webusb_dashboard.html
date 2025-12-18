@@ -689,6 +689,25 @@
                 </div>
             </div>
 
+            <!-- OATH Backup & Restore -->
+            <div class="card">
+                <div class="card-header">
+                    💾 OATH Backup & Restore
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label>Status do Backup:</label>
+                        <div id="backupStatus" style="padding: 10px; background: var(--light); border-radius: 4px; font-size: 12px;">
+                            Nenhum backup realizado
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="backupOATH()">Fazer Backup</button>
+                        <button class="btn btn-success" onclick="restoreOATH()">Restaurar Backup</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- WebSocket Client -->
             <div class="card">
                 <div class="card-header">
@@ -850,7 +869,7 @@
                 addLog('Solicitando dispositivo WebUSB...', 'info');
                 
                 const device = await navigator.usb.requestDevice({
-                    filters: [{ vendorId: 0x1209, productId: 0x4D41 }]
+                    filters: [{ vendorId: 0x1050, productId: 0x0407 }] // Yubico VID/PID
                 });
                 
                 if (!device) {
@@ -1306,6 +1325,82 @@
             
             addLog(`Assinando eventos de: ${deviceId}`, 'info');
             showToast('Assinatura realizada', 'success');
+        }
+
+        // OATH Backup/Restore
+        async function backupOATH() {
+            if (!isConnected) {
+                showToast('Dispositivo não conectado', 'error');
+                return;
+            }
+
+            addLog('Iniciando backup das credenciais OATH...', 'info');
+            
+            try {
+                // Command: 0x20 (WEBUSB_CMD_OATH_BACKUP)
+                const data = new Uint8Array([0x20]);
+                await window.device.transferOut(2, data);
+                
+                const result = await window.device.transferIn(1, 8192);
+                if (result.data.getUint8(0) === 0x20 && result.data.getUint8(1) === 0x00) {
+                    const backupBlob = result.data.buffer.slice(2);
+                    const blob = new Blob([backupBlob], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rp2350-oath-backup-${Date.now()}.bin`;
+                    a.click();
+                    
+                    document.getElementById('backupStatus').textContent = `Backup concluído: ${backupBlob.byteLength} bytes`;
+                    addLog(`Backup concluído com sucesso (${backupBlob.byteLength} bytes)`, 'success');
+                    showToast('Backup realizado', 'success');
+                } else {
+                    addLog('Falha no backup: Resposta inválida do dispositivo', 'error');
+                    showToast('Falha no backup', 'error');
+                }
+            } catch (error) {
+                addLog(`Erro no backup: ${error.message}`, 'error');
+                showToast('Erro no backup', 'error');
+            }
+        }
+
+        async function restoreOATH() {
+            if (!isConnected) {
+                showToast('Dispositivo não conectado', 'error');
+                return;
+            }
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                addLog(`Restaurando backup: ${file.name}...`, 'info');
+                const buffer = await file.arrayBuffer();
+                const data = new Uint8Array(buffer.byteLength + 1);
+                data[0] = 0x21; // WEBUSB_CMD_OATH_RESTORE
+                data.set(new Uint8Array(buffer), 1);
+
+                try {
+                    await window.device.transferOut(2, data);
+                    const result = await window.device.transferIn(1, 64);
+                    
+                    if (result.data.getUint8(0) === 0x21 && result.data.getUint8(1) === 0x00) {
+                        addLog('Backup restaurado com sucesso!', 'success');
+                        showToast('Backup restaurado', 'success');
+                        updateStats();
+                    } else {
+                        addLog('Falha ao restaurar: Resposta inválida', 'error');
+                        showToast('Falha ao restaurar', 'error');
+                    }
+                } catch (error) {
+                    addLog(`Erro ao restaurar: ${error.message}`, 'error');
+                    showToast('Erro ao restaurar', 'error');
+                }
+            };
+            input.click();
         }
 
         // Initialize

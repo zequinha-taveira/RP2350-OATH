@@ -78,6 +78,8 @@ bool oath_storage_verify_password(const uint8_t *code, uint8_t len);
 
 // Check if any password is currently set
 bool oath_storage_is_password_set(void);
+bool oath_storage_export(uint8_t *buffer, uint16_t *len);
+bool oath_storage_import(const uint8_t *buffer, uint16_t len);
 
 // Helper functions for credential encryption (implemented in aes_gcm.c or
 // oath_storage.c)

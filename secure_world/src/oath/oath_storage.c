@@ -2,24 +2,23 @@
 #include "../crypto/aes.h"
 #include "../crypto/aes_gcm.h"
 #include "../crypto/sha256.h"
-#include "security/security.h"
+#include "../security/security.h"
+#include "../security/security_manager.h"
+#include "security/security_manager.h" // Try both for safety in different include setups
 #include <hardware/address_mapped.h>
 #include <hardware/flash.h>
 #include <hardware/sync.h>
 #include <pico/rand.h>
 #include <pico/stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-/**
- * @file oath_storage.c
- * @brief Secure encrypted flash storage for OATH credentials.
- *
- * Implements AES-GCM encryption per credential and full-block encryption
- * for the storage index.
- */
 
-#include "security/security_manager.h"
+#ifndef FLASH_SECTOR_SIZE
+#define FLASH_SECTOR_SIZE 4096
+#endif
 
 #define STORAGE_MAGIC 0x534F4154 // "SOAT" (Secure OATH)
 #define STORAGE_VERSION 0x02
@@ -331,4 +330,27 @@ bool oath_storage_verify_password(const uint8_t *code, uint8_t len) {
 
 bool oath_storage_is_password_set(void) {
   return (ram_cache.access_code_set == 1);
+}
+
+bool oath_storage_export(uint8_t *buffer, uint16_t *len) {
+  printf("[STORAGE] Exporting credentials...\n");
+  if (*len < sizeof(oath_persist_t)) {
+    return false;
+  }
+  memcpy(buffer, &ram_cache, sizeof(oath_persist_t));
+  *len = sizeof(oath_persist_t);
+  return true;
+}
+
+bool oath_storage_import(const uint8_t *buffer, uint16_t len) {
+  printf("[STORAGE] Importing credentials...\n");
+  if (len != sizeof(oath_persist_t)) {
+    return false;
+  }
+  oath_persist_t *imported = (oath_persist_t *)buffer;
+  if (imported->magic != STORAGE_MAGIC) {
+    return false;
+  }
+  memcpy(&ram_cache, buffer, sizeof(oath_persist_t));
+  return save_to_flash();
 }

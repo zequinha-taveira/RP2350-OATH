@@ -268,3 +268,11 @@ bool aes_decrypt(const uint8_t *key, const uint8_t *iv, const uint8_t *input,
   }
   return true;
 }
+
+void aes_key_expansion(const uint8_t *key, uint8_t *w) { KeyExpansion(key, w); }
+
+void aes_ecb_encrypt_block(const uint8_t *input, const uint8_t *w,
+                           uint8_t *output) {
+  memcpy(output, input, 16);
+  Cipher(output, w);
+}

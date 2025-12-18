@@ -3,8 +3,12 @@
 #include "pico/stdlib.h"
 #include "secure_gateway.h"
 #include "tusb.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
 
 //--------------------------------------------------------------------+
 // WebUSB Device State
@@ -15,8 +19,9 @@ typedef struct {
   bool is_configured;
   uint8_t ep_out;
   uint8_t ep_in;
-  uint8_t rx_buffer[WEBUSB_EP_SIZE];
-  uint8_t tx_buffer[WEBUSB_EP_SIZE];
+  uint8_t rx_buffer[1024];     // Increased for general commands
+  uint8_t tx_buffer[1024];     // Increased for general commands
+  uint8_t backup_buffer[8192]; // Large buffer for OATH backup/restore
 } webusb_state_t;
 
 static webusb_state_t webusb_state = {
@@ -326,6 +331,38 @@ void webusb_handle_command(uint8_t const *msg, uint32_t len) {
       }
     }
     break;
+
+  case WEBUSB_CMD_OATH_BACKUP: {
+    uint16_t backup_len = sizeof(webusb_state.backup_buffer) - 2;
+    if (secure_gateway_oath_backup(webusb_state.backup_buffer + 2,
+                                   &backup_len)) {
+      webusb_state.backup_buffer[0] = WEBUSB_CMD_OATH_BACKUP;
+      webusb_state.backup_buffer[1] = WEBUSB_STATUS_OK;
+      // Send large response
+      tud_vendor_write(webusb_state.backup_buffer, backup_len + 2);
+      response_len = 0; // Already sent
+    } else {
+      response[0] = WEBUSB_CMD_OATH_BACKUP;
+      response[1] = WEBUSB_STATUS_ERROR;
+      response_len = 2;
+    }
+    break;
+  }
+
+  case WEBUSB_CMD_OATH_RESTORE: {
+    if (len > 2) {
+      if (secure_gateway_oath_restore(msg + 1, len - 1)) {
+        response[0] = WEBUSB_CMD_OATH_RESTORE;
+        response[1] = WEBUSB_STATUS_OK;
+        response_len = 2;
+      } else {
+        response[0] = WEBUSB_CMD_OATH_RESTORE;
+        response[1] = WEBUSB_STATUS_ERROR;
+        response_len = 2;
+      }
+    }
+    break;
+  }
 
   default:
     response[0] = command;

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 // WebUSB Vendor Code definitions
 #define WEBUSB_REQ_GET_URL 0x02
 #define WEBUSB_REQ_GET_STATUS 0x03
@@ -29,6 +28,8 @@
 #define WEBUSB_CMD_HSM_GEN_KEY 0x10
 #define WEBUSB_CMD_HSM_GET_PUBKEY 0x11
 #define WEBUSB_CMD_HSM_SIGN 0x12
+#define WEBUSB_CMD_OATH_BACKUP 0x20
+#define WEBUSB_CMD_OATH_RESTORE 0x21
 
 // WebUSB Response Status
 #define WEBUSB_STATUS_OK 0x00

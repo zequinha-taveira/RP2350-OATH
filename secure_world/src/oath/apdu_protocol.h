@@ -30,9 +30,11 @@
 
 // APDU Instructions
 #define INS_SELECT 0xA4
-#define INS_CALCULATE 0xA1 // Used for CALCULATE, LIST, etc. in YKOATH
-#define INS_VERSION 0x06   // Get Version
-#define INS_VALIDATE 0xA3  // Validate PIN (YKOATH standard)
+#define INS_LIST 0xA1
+#define INS_CALCULATE 0xA2
+#define INS_VALIDATE 0xA3 // Validate PIN (YKOATH standard)
+#define INS_CALCULATE_ALL 0xA4
+#define INS_VERSION 0x06 // Get Version
 
 //--------------------------------------------------------------------+
 // Yubico OATH Application Constants
@@ -52,6 +54,16 @@ static const uint8_t MGMT_AID[MGMT_AID_LEN] = {0xA0, 0x00, 0x00, 0x05,
 // Application Identifier (AID) for Yubico PIV
 #define PIV_AID_LEN 5
 static const uint8_t PIV_AID[PIV_AID_LEN] = {0xA0, 0x00, 0x00, 0x03, 0x08};
+
+// Application Identifier (AID) for OpenPGP
+#define OPENPGP_AID_LEN 6
+static const uint8_t OPENPGP_AID[OPENPGP_AID_LEN] = {0xD2, 0x76, 0x00,
+                                                     0x01, 0x24, 0x01};
+
+// Application Identifier (AID) for FIDO2
+#define FIDO2_AID_LEN 8
+static const uint8_t FIDO2_AID[FIDO2_AID_LEN] = {0xA0, 0x00, 0x00, 0x06,
+                                                 0x47, 0x21, 0x01, 0x01};
 
 // OATH Command Tags (used in the data field of INS_CALCULATE)
 #define OATH_TAG_NAME 0x71

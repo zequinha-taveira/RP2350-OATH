@@ -16,6 +16,10 @@ typedef enum {
   SG_HSM_GEN_KEY = 0x10,
   SG_HSM_GET_PUBKEY = 0x11,
   SG_HSM_SIGN = 0x12,
+  SG_GET_CONFIG = 0x20,
+  SG_FIDO2_HANDLE_MSG = 0x30,
+  SG_OATH_BACKUP = 0x40,
+  SG_OATH_RESTORE = 0x41,
 } secure_gateway_func_id_t;
 
 // Secure Gateway error codes
@@ -65,5 +69,11 @@ bool secure_gateway_hsm_get_pubkey(uint8_t slot, uint8_t *pubkey,
  */
 bool secure_gateway_hsm_sign(uint8_t slot, const uint8_t *hash, uint8_t *sig,
                              uint16_t *sig_len);
+
+bool secure_gateway_fido2_handle_msg(const uint8_t *msg_in, uint16_t len_in,
+                                     uint8_t *msg_out, uint16_t *len_out);
+
+bool secure_gateway_oath_backup(uint8_t *out_buf, uint16_t *out_len);
+bool secure_gateway_oath_restore(const uint8_t *in_buf, uint16_t in_len);
 
 #endif // _SECURE_GATEWAY_H_

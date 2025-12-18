@@ -1,8 +1,10 @@
 #include "applet_manager.h"
 #include "oath/apdu_protocol.h"
 #include "oath/fido2_applet.h"
+#include "oath/management_applet.h"
 #include "oath/oath_protocol.h"
 #include "oath/openpgp_applet.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,6 +39,13 @@ void applet_manager_init(void) {
   registered_applets[num_applets].aid_len = FIDO2_AID_LEN;
   registered_applets[num_applets].init = fido2_applet_init;
   registered_applets[num_applets].handle_apdu = fido2_applet_handle_apdu;
+  num_applets++;
+
+  // Register Management Applet
+  registered_applets[num_applets].aid = MGMT_AID;
+  registered_applets[num_applets].aid_len = MGMT_AID_LEN;
+  registered_applets[num_applets].init = management_applet_init;
+  registered_applets[num_applets].handle_apdu = management_applet_handle_apdu;
   num_applets++;
 
   // Initialize all applets

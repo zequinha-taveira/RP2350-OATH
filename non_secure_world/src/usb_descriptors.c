@@ -1,32 +1,36 @@
 #include "pico/unique_id.h"
+#include "secure_gateway.h"
 #include "tusb.h"
 #include <stdio.h>
-
 
 //--------------------------------------------------------------------+
 // Device Descriptors
 // Updated to support WebUSB and FIDO2
 //--------------------------------------------------------------------+
-tusb_desc_device_t const desc_device = {
-    .bLength = sizeof(tusb_desc_device_t),
-    .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = 0x0210, // USB 2.1 for WebUSB
-    .bDeviceClass = 0x00,
-    .bDeviceSubClass = 0x00,
-    .bDeviceProtocol = 0x00,
-    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
+tusb_desc_device_t desc_device = {.bLength = sizeof(tusb_desc_device_t),
+                                  .bDescriptorType = TUSB_DESC_DEVICE,
+                                  .bcdUSB = 0x0210, // USB 2.1 for WebUSB
+                                  .bDeviceClass = 0x00,
+                                  .bDeviceSubClass = 0x00,
+                                  .bDeviceProtocol = 0x00,
+                                  .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor = 0x1050,  // Yubico
-    .idProduct = 0x0407, // YubiKey 5 Series CCID+FIDO+OTP
-    .bcdDevice = 0x0543, // Version 5.4.3
+                                  .idVendor = 0x1050,  // Default Yubico
+                                  .idProduct = 0x0407, // Default CCID+FIDO+OTP
+                                  .bcdDevice = 0x0543, // Version 5.4.3
 
-    .iManufacturer = 0x01,
-    .iProduct = 0x02,
-    .iSerialNumber = 0x03,
+                                  .iManufacturer = 0x01,
+                                  .iProduct = 0x02,
+                                  .iSerialNumber = 0x03,
 
-    .bNumConfigurations = 0x01};
+                                  .bNumConfigurations = 0x01};
 
 uint8_t const *tud_descriptor_device_cb(void) {
+  uint16_t vid, pid;
+  if (secure_gateway_get_config(&vid, &pid)) {
+    desc_device.idVendor = vid;
+    desc_device.idProduct = pid;
+  }
   return (uint8_t const *)&desc_device;
 }
 
@@ -152,7 +156,7 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
 char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04}, // 0: is supported language is English (0x0409)
     "Yubico",                   // 1: Manufacturer
-    "YubiKey 5 FIDO+CCID",      // 2: Product fork
+    "YubiKey",                  // 2: Product Name
     "0000000000000000",         // 3: Serials, handled dynamically
     "CCID Interface",           // 4: CCID Interface
     "WebUSB Interface",         // 5: WebUSB Interface

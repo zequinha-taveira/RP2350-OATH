@@ -9,6 +9,8 @@ set(SECURE_APP_SOURCES
     src/oath/openpgp_storage.c
     src/oath/fido2_applet.c
     src/oath/fido2_storage.c
+    src/oath/cbor.c
+    src/oath/management_applet.c
     src/security/security.c
     src/security/hsm.c
     src/time_sync.c

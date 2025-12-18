@@ -1,5 +1,5 @@
 #include "fido2_device.h"
-#include "device/usbd_pvt.h"
+#include "pico/rand.h"
 #include "pico/stdlib.h"
 #include "secure_gateway.h"
 #include "tusb.h"
@@ -336,31 +336,29 @@ void fido2_handle_msg(ctaphid_frame_t const *frame) {
   // Send processing keepalive
   fido2_send_keepalive(CTAP2_KEEPALIVE_STATUS_PROCESSING);
 
-  switch (ctap_cmd) {
-  case CTAP2_MAKE_CREDENTIAL:
-    fido2_handle_make_credential(ctap_data, ctap_len);
-    break;
+  uint8_t response[1024];
+  uint16_t response_len = 0;
 
-  case CTAP2_GET_ASSERTION:
-    fido2_handle_get_assertion(ctap_data, ctap_len);
-    break;
+  if (secure_gateway_fido2_handle_msg(frame->data, data_len, response,
+                                      &response_len)) {
+    // Send as CTAPHID_MSG
+    // For simplicity, we assume single-packet response for now
+    // In a real implementation, we'd handle fragments
+    uint8_t hid_response[64];
+    memset(hid_response, 0, 64);
+    hid_response[0] = CTAPHID_MSG;
+    hid_response[1] = (response_len >> 8) & 0xFF;
+    hid_response[2] = response_len & 0xFF;
 
-  case CTAP2_GET_INFO:
-    fido2_handle_get_info();
-    break;
+    // Copy first chunk
+    uint16_t chunk_len = (response_len > 61) ? 61 : response_len;
+    memcpy(hid_response + 3, response, chunk_len);
 
-  case CTAP2_CLIENT_PIN:
-    fido2_handle_client_pin(ctap_data, ctap_len);
-    break;
+    fido2_send_report(hid_response, 64);
 
-  case CTAP2_RESET:
-    fido2_handle_reset();
-    break;
-
-  default:
-    printf("FIDO2: Unsupported CTAP2 command 0x%02X\n", ctap_cmd);
-    fido2_send_error(CTAP2_ERR_UNSUPPORTED_ALGORITHM);
-    break;
+    // TODO: Handle fragments if response_len > 61
+  } else {
+    fido2_send_error(CTAP2_ERR_OTHER);
   }
 }
 
@@ -380,166 +378,24 @@ void fido2_handle_wink(void) {
   fido2_send_report(response, 3);
 }
 
-void fido2_handle_make_credential(uint8_t const *data, uint16_t len) {
-  printf("FIDO2: MAKE_CREDENTIAL\n");
+ptr = cbor_encode_uint(ptr, 0x05);
+ptr = cbor_encode_uint(ptr, fido2_state.max_msg_size);
 
-  // This is a simplified implementation
-  // In a real implementation, this would parse CBOR data
+// Pin protocols
+ptr = cbor_encode_uint(ptr, 0x06);
+ptr = cbor_encode_array(ptr, 1);
+ptr = cbor_encode_uint(ptr, fido2_state.pin_protocol);
 
-  // Request user verification
-  if (!fido2_verify_user()) {
-    fido2_send_error(CTAP2_ERR_USER_ACTION_TIMEOUT);
-    return;
-  }
+uint16_t response_len = ptr - response;
 
-  // Generate credential (simplified)
-  uint8_t credential_id[16];
-  for (int i = 0; i < 16; i++) {
-    credential_id[i] = (uint8_t)rand();
-  }
+// Send as CTAPHID_MSG
+uint8_t hid_response[64];
+hid_response[0] = CTAPHID_MSG;
+hid_response[1] = (response_len >> 8) & 0xFF;
+hid_response[2] = response_len & 0xFF;
+memcpy(hid_response + 3, response, response_len);
 
-  // Build response
-  uint8_t response[256];
-  uint8_t *ptr = response;
-
-  // CTAP2 command response
-  *ptr++ = CTAP2_MAKE_CREDENTIAL;
-
-  // CBOR map with credential
-  ptr = cbor_encode_map(ptr, 3);
-
-  // Format: 0x01 (credential)
-  ptr = cbor_encode_uint(ptr, 0x01);
-  ptr = cbor_encode_bytes(ptr, credential_id, 16);
-
-  // Format: 0x02 (public key - simplified)
-  uint8_t pubkey[65] = {0x04}; // ECDSA P-256 uncompressed
-  ptr = cbor_encode_uint(ptr, 0x02);
-  ptr = cbor_encode_bytes(ptr, pubkey, 65);
-
-  // Format: 0x03 (authenticator data - simplified)
-  uint8_t auth_data[32] = {0};
-  ptr = cbor_encode_uint(ptr, 0x03);
-  ptr = cbor_encode_bytes(ptr, auth_data, 32);
-
-  uint16_t response_len = ptr - response;
-
-  // Store credential
-  fido2_store_credential(credential_id, credential_id, 16);
-
-  // Send as CTAPHID_MSG
-  uint8_t hid_response[64];
-  hid_response[0] = CTAPHID_MSG;
-  hid_response[1] = (response_len >> 8) & 0xFF;
-  hid_response[2] = response_len & 0xFF;
-  memcpy(hid_response + 3, response, response_len);
-
-  fido2_send_report(hid_response, 3 + response_len);
-}
-
-void fido2_handle_get_assertion(uint8_t const *data, uint16_t len) {
-  printf("FIDO2: GET_ASSERTION\n");
-
-  // Request user verification
-  if (!fido2_verify_user()) {
-    fido2_send_error(CTAP2_ERR_USER_ACTION_TIMEOUT);
-    return;
-  }
-
-  // Build response
-  uint8_t response[256];
-  uint8_t *ptr = response;
-
-  // CTAP2 command response
-  *ptr++ = CTAP2_GET_ASSERTION;
-
-  // CBOR map with assertion
-  ptr = cbor_encode_map(ptr, 3);
-
-  // Format: 0x01 (credential)
-  uint8_t credential_id[16] = {0};
-  ptr = cbor_encode_uint(ptr, 0x01);
-  ptr = cbor_encode_bytes(ptr, credential_id, 16);
-
-  // Format: 0x02 (authenticator data)
-  uint8_t auth_data[32] = {0};
-  ptr = cbor_encode_uint(ptr, 0x02);
-  ptr = cbor_encode_bytes(ptr, auth_data, 32);
-
-  // Format: 0x03 (signature - simplified)
-  uint8_t signature[64] = {0};
-  ptr = cbor_encode_uint(ptr, 0x03);
-  ptr = cbor_encode_bytes(ptr, signature, 64);
-
-  uint16_t response_len = ptr - response;
-
-  // Send as CTAPHID_MSG
-  uint8_t hid_response[64];
-  hid_response[0] = CTAPHID_MSG;
-  hid_response[1] = (response_len >> 8) & 0xFF;
-  hid_response[2] = response_len & 0xFF;
-  memcpy(hid_response + 3, response, response_len);
-
-  fido2_send_report(hid_response, 3 + response_len);
-}
-
-void fido2_handle_get_info(void) {
-  printf("FIDO2: GET_INFO\n");
-
-  uint8_t response[128];
-  uint8_t *ptr = response;
-
-  // CTAP2 command response
-  *ptr++ = CTAP2_GET_INFO;
-
-  // CBOR map
-  ptr = cbor_encode_map(ptr, 6);
-
-  // Versions
-  ptr = cbor_encode_uint(ptr, 0x01);
-  ptr = cbor_encode_array(ptr, 2);
-  ptr = cbor_encode_string(ptr, "FIDO_2_0");
-  ptr = cbor_encode_string(ptr, "U2F_V2");
-
-  // Extensions
-  ptr = cbor_encode_uint(ptr, 0x02);
-  ptr = cbor_encode_array(ptr, 0);
-
-  // AAGUID
-  uint8_t aaguid[16] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0,
-                        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
-  ptr = cbor_encode_uint(ptr, 0x03);
-  ptr = cbor_encode_bytes(ptr, aaguid, 16);
-
-  // Options
-  ptr = cbor_encode_uint(ptr, 0x04);
-  ptr = cbor_encode_map(ptr, 3);
-  ptr = cbor_encode_string(ptr, "plat");
-  ptr = cbor_encode_uint(ptr, 0); // Not platform
-  ptr = cbor_encode_string(ptr, "rk");
-  ptr = cbor_encode_uint(ptr, 1); // Supports resident keys
-  ptr = cbor_encode_string(ptr, "up");
-  ptr = cbor_encode_uint(ptr, 1); // Supports user presence
-
-  // Max message size
-  ptr = cbor_encode_uint(ptr, 0x05);
-  ptr = cbor_encode_uint(ptr, fido2_state.max_msg_size);
-
-  // Pin protocols
-  ptr = cbor_encode_uint(ptr, 0x06);
-  ptr = cbor_encode_array(ptr, 1);
-  ptr = cbor_encode_uint(ptr, fido2_state.pin_protocol);
-
-  uint16_t response_len = ptr - response;
-
-  // Send as CTAPHID_MSG
-  uint8_t hid_response[64];
-  hid_response[0] = CTAPHID_MSG;
-  hid_response[1] = (response_len >> 8) & 0xFF;
-  hid_response[2] = response_len & 0xFF;
-  memcpy(hid_response + 3, response, response_len);
-
-  fido2_send_report(hid_response, 3 + response_len);
+fido2_send_report(hid_response, 3 + response_len);
 }
 
 void fido2_handle_client_pin(uint8_t const *data, uint16_t len) {
