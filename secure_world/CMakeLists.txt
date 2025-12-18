@@ -55,6 +55,12 @@ target_compile_definitions(secure_app PRIVATE
     uECC_SQUARE_FUNC=1
 )
 
+# Security Hardening Flags
+target_compile_options(secure_app PRIVATE
+    -fstack-protector-all
+    -Wstack-usage=1024
+)
+
 # Linker script configuration
 pico_set_linker_script(secure_app ${CMAKE_CURRENT_LIST_DIR}/memmap_secure.ld)
 

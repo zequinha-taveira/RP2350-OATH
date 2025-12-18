@@ -4,11 +4,10 @@
 #include "secure_functions.h" // NSC functions
 #include "secure_gateway.h"   // Secure Gateway interface (SG_INIT)
 #include "tusb.h"
-#include "usb/usb_composite.h" // Composite USB driver
 #include "usb/ccid_device.h"   // CCID driver
-#include "usb/webusb_device.h" // WebUSB driver
 #include "usb/fido2_device.h"  // FIDO2 driver
-
+#include "usb/usb_composite.h" // Composite USB driver
+#include "usb/webusb_device.h" // WebUSB driver
 
 // Main application entry point (Non-Secure World)
 int main(void) {
@@ -18,17 +17,17 @@ int main(void) {
   printf("Non-Secure World: Booting...\n");
 
   // 1. Initialize Secure World (via Secure Gateway)
-  secure_world_handler(SG_INIT, NULL, 0, NULL);
+  secure_world_handler(SG_INIT, NULL, 0, NULL, 0);
   printf("Non-Secure World: Secure World Initialized.\n");
 
   // 2. Initialize all USB interfaces
   tusb_init();
-  
+
   // Initialize individual device drivers
   ccid_init();
   webusb_init();
   fido2_init();
-  
+
   // Initialize composite driver
   usb_composite_init();
 

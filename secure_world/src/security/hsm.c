@@ -2,6 +2,7 @@
 #include "../crypto/aes_gcm.h"
 #include "../crypto/uECC.h"
 #include "security.h"
+#include "security_manager.h"
 #include <hardware/address_mapped.h>
 #include <hardware/flash.h>
 #include <hardware/sync.h>
@@ -11,9 +12,7 @@
 #include <string.h>
 
 
-// HSM Flash Storage Configuration
-// Using the second to last 4KB sector of Flash for HSM data
-#define HSM_FLASH_OFFSET (2 * 1024 * 1024 - 8192)
+// HSM Slot definitions
 #define HSM_MAGIC 0x48534D21 // "HSM!"
 
 // HSM Slot definitions

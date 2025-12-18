@@ -6,30 +6,31 @@
 #include <stdint.h>
 #include <stdio.h>
 
-// Composite USB Device Driver
-// Handles multiple interfaces: CCID, WebUSB, and FIDO2
+/**
+ * @file usb_composite.c
+ * @brief Management of multiple USB class drivers (CCID, WebUSB, FIDO2).
+ */
 
-// External driver definitions
 extern usbd_class_driver_t const ccid_driver;
 extern usbd_class_driver_t const webusb_driver;
 extern usbd_class_driver_t const fido2_driver;
 
-static usbd_class_driver_t const *drivers[3];
-static uint8_t registered_driver_count = 0;
+static usbd_class_driver_t const *drivers[] = {&ccid_driver, &webusb_driver,
+                                               &fido2_driver};
+
+#define DRIVER_COUNT (sizeof(drivers) / sizeof(drivers[0]))
 
 void usb_composite_init(void) {
-  // Registered drivers
-  drivers[0] = &ccid_driver;
-  drivers[1] = &webusb_driver;
-  drivers[2] = &fido2_driver;
-  registered_driver_count = 3;
-
-  printf("USB Composite: %d drivers registered\n", registered_driver_count);
+  printf("[USB] Registering %d class drivers (CCID, WebUSB, FIDO2)...\n",
+         (int)DRIVER_COUNT);
 }
 
-// This callback is called by TinyUSB stack to get application-defined class
-// drivers
+/**
+ * TinyUSB callback to get application-defined class drivers.
+ * @param driver_count Output for the number of drivers.
+ * @return Pointer to the driver array.
+ */
 usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {
-  *driver_count = registered_driver_count;
-  return drivers[0]; // Return the start of the array
+  *driver_count = (uint8_t)DRIVER_COUNT;
+  return drivers[0];
 }

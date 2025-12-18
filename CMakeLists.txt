@@ -22,6 +22,15 @@ add_subdirectory(secure_world)
 set(SECURE_IMPORT_LIB ${CMAKE_CURRENT_BINARY_DIR}/secure_world/secure_app_import_lib.o)
 
 # Add Non-Secure World
-# We pass the SECURE_IMPORT_LIB variable to the child scope automatically, 
-# but we can also be explicit if needed.
 add_subdirectory(non_secure_world)
+
+# --- SECURITY HARDENING: SECURE BOOT ---
+# To enable Secure Boot on RP2350, you must:
+# 1. Generate a public/private key pair using 'picotool'.
+# 2. Burn the public key hash into the OTP.
+# 3. Enable the following lines to sign the binary:
+
+# set(PICO_SECURE_BOOT_KEY_FILE "${CMAKE_CURRENT_LIST_DIR}/keys/secure-boot-key.pem")
+# pico_set_binary_type(non_secure_app secure)
+# pico_set_binary_type(secure_app secure)
+# ---------------------------------------
